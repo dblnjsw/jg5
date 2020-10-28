@@ -6,10 +6,13 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 import datetime
+import requests
+
 
 s = ''
 # attr=['index','src','title','href']
 title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号（从轮播图下开始）', 'title': '标题', 'href': '链接'}
+
 
 # with open('json.txt','r',encoding='UTF-8') as f:
 #     s=f.read()
@@ -18,6 +21,13 @@ title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号�
 
 s3_client = None
 
+url='http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
+param={'webSiteNo':'01','code':'M1236','locale':'en_US'}
+
+def get_ori_json(p):
+    res=requests.get(url=url,params=p)
+    j=json.loads(res.text)
+    return j['result']
 
 def upload_file(file_name, bucket, object_name=None):
     # If S3 object_name was not specified, use file_name
@@ -45,8 +55,12 @@ class Gjson():
     last_language=''
     last_ori=''
 
+    wmap={}
+    lmap={}
+
     def __init__(self):
-        self.json_ori = self.read_json_file('json.txt')
+        print('初始化中。。')
+        # self.json_ori = self.read_json_file('json.txt')
         os.environ["AWS_SHARED_CREDENTIALS_FILE"] = 'C:\\credentials.txt'
 
         # find all dir
@@ -55,6 +69,27 @@ class Gjson():
             if e.is_dir():
                 if e.name.startswith('config_'):
                     self.dirs.append(e.name)
+
+        # read wmap and lmap into memory
+
+        with open('wmap.txt', 'r', encoding='UTF-8') as f:
+            line = f.readline()
+            while line:
+                line=line.replace('\n','')
+                s = line.split(' ')
+                self.wmap[s[2]]=s[0]
+                line = f.readline()
+
+        with open('lmap.txt', 'r', encoding='UTF-8') as f:
+            line = f.readline()
+            while line:
+                line=line.replace('\n','')
+                s = line.split('_')
+                self.lmap[s[0]] = line
+                line = f.readline()
+
+
+
 
     # read xlxs file named config***
     def read_config(self):
@@ -72,6 +107,7 @@ class Gjson():
                 dic[table.cell_value(0, col)] = table.cell_value(row, col)
 
             self.configs.append(dic)
+
         # print(list)
 
     def read_json_file(self, o):
@@ -153,6 +189,8 @@ class Gjson():
             except:
                 raise AssertionError('config.xlxs标题非法')
 
+
+
             # is images?
             type = 'list'
             n_images = self.is_imgs(i, 0)
@@ -160,7 +198,7 @@ class Gjson():
             if n_images != 0:
                 type = 'images'
 
-            # is image:
+            # is image, need titles and hrefs
             e_titles = []
             e_hrefs = []
             if type == 'images':
@@ -171,15 +209,18 @@ class Gjson():
                     e_hrefs.append(self.configs[i + ii][title_map['href']])
 
             i += n_images
+
             # read origin json file
-            ori_path = self.current_dir + '/' + e_language + '.txt'
-            assert os.path.exists(ori_path), '原json文件：' + ori_path + '不存在'
+
+            global param
+            param['webSiteNo']=self.wmap[self.web]
+            param['locale']=self.lmap[e_language]
 
             ori = None
             if e_language == self.last_language:
                 ori = self.last_ori
             else:
-                ori = self.read_json_file(ori_path)
+                ori = json.loads(get_ori_json(param))
             pc = None
             if e_plat == 'pc':
                 pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
