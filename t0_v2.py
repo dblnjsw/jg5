@@ -154,7 +154,7 @@ class Gjson():
             if lan in unpo_locale:
                 pic_name=pic_name.replace(lan,'en')
                 pic_path = self.gen_img_path(pic_name)
-                print('返回en图片链接：'+pic_path+'jpg')
+                print('返回en图片链接：'+pic_path+'.jpg')
                 return  pic_path + '.jpg'
             else:
                 return None
@@ -274,14 +274,16 @@ class Gjson():
 
                 # process href (without ios and an)
                 if e_href != '':
-                    m = re.search('.*\/(.*?)\.html', e['href'])
+                    m = re.search('.*\/(.*?)\.html', e_href)
                     if m:
                         id = m.group(1)
+                    else:
+                        raise AssertionError
                     if e_plat == 'pc' or e_plat == 'ms':
                         pc['href'] = e_href
 
                         if 'relatedId' in pc:
-                            pc['relatedId']=id
+                            pc['relatedId'] = id
                     else:
                         if 'id' in pc:
                             pc['id'] = id

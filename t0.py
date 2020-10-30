@@ -24,10 +24,7 @@ s3_client = None
 url='http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param={'webSiteNo':'01','code':'M1236','locale':'en_US'}
 
-def get_ori_json(p):
-    res=requests.get(url=url,params=p)
-    j=json.loads(res.text)
-    return j['result']
+
 
 def upload_file(file_name, bucket, object_name=None):
     # If S3 object_name was not specified, use file_name
@@ -88,8 +85,20 @@ class Gjson():
                 self.lmap[s[0]] = line
                 line = f.readline()
 
+    def get_ori_json(self,p):
+        ofile=self.resultfilepath+'/'+p['locale']+'.txt'
+        j=None
+        if os.path.exists(ofile):
+            res = self.read_json_file(ofile)
+            j = json.loads(res.text)
+        else:
+            res = requests.get(url=url, params=p)
+            j = json.loads(res.text)
+            j = j['result']
+        assert j
+        return j
 
-
+    # def write_result(self):
 
     # read xlxs file named config***
     def read_config(self):
@@ -103,9 +112,15 @@ class Gjson():
         cols = table.ncols
         for row in range(1, rows):
             dic = {}
+            ldic = {}
             for col in range(cols):
-                dic[table.cell_value(0, col)] = table.cell_value(row, col)
+                if table.cell_value(0, col).count('语') > 0:
+                    if table.cell_value(row, col) != '':
+                        ldic[table.cell_value(0, col)] = table.cell_value(row, col)
+                else:
+                    dic[table.cell_value(0, col)] = table.cell_value(row, col)
 
+            dic['title'] = ldic
             self.configs.append(dic)
 
         # print(list)
@@ -140,7 +155,7 @@ class Gjson():
 
         e = self.configs[i]
         e_plat = e[title_map['plat']]
-        e_language = e[title_map['language']]
+        # e_language = e[title_map['language']]
         e_index = e[title_map['index']]
 
         i += 1
@@ -148,14 +163,13 @@ class Gjson():
             return n
         e = self.configs[i]
         next_e_plat = e[title_map['plat']]
-        next_e_language = e[title_map['language']]
+        # next_e_language = e[title_map['language']]
         next_e_index = e[title_map['index']]
 
         if e_plat == next_e_plat:
-            if e_language == next_e_language:
-                if e_index == next_e_index:
-                    n += 1
-                    return self.is_imgs(i, n)
+            if e_index == next_e_index:
+                n += 1
+                return self.is_imgs(i, n)
         return n
 
     def gen_img_path(self, img):
@@ -171,6 +185,10 @@ class Gjson():
         return path
 
     def do_config(self):
+        self.resultfilepath = 'result_' + self.current_dir[7:]
+        if not os.path.exists(self.resultfilepath):
+            os.mkdir(self.resultfilepath)
+
         global title_map
         a = 1
         i = 0
@@ -182,14 +200,12 @@ class Gjson():
             a += 1
             try:
                 e_plat = e[title_map['plat']]
-                e_language = e[title_map['language']]
+                # e_language = e[title_map['language']]
                 e_index = e[title_map['index']]
-                e_title = e[title_map['title']]
+                # e_title = e[title_map['title']]
                 e_href = e[title_map['href']]
             except:
                 raise AssertionError('config.xlxs标题非法')
-
-
 
             # is images?
             type = 'list'
@@ -205,94 +221,157 @@ class Gjson():
                 for ii in range(n_images + 1):
                     if ii > 0:
                         print(self.configs[i + ii])
-                    e_titles.append(self.configs[i + ii][title_map['title']])
+                    e_titles.append(self.configs[i + ii]['title'])
                     e_hrefs.append(self.configs[i + ii][title_map['href']])
 
             i += n_images
 
-            # read origin json file
-
-            global param
-            param['webSiteNo']=self.wmap[self.web]
-            param['locale']=self.lmap[e_language]
-
-            ori = None
-            if e_language == self.last_language:
-                ori = self.last_ori
-            else:
-                ori = json.loads(get_ori_json(param))
-            pc = None
-            if e_plat == 'pc':
-                pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
-            elif e_plat == 'ms':
-                pc = ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
-
-            # log
-            print('改动前：')
-            print(pc)
 
             # process type-list
+
             if type == 'list':
-                # process title
-                if e_title != '':
-                    pc['title'] = e_title
-                    pc["styledTitle"] = e_title
-                    pc["refId"] = e_title.replace(' ', '')
+                before = None
+                after = None
+                for lan in e['title']:
+                    before=[]
+                    after=[]
+                    ma = re.search('\((.*)\)', lan)
+                    assert not ma, '表头语言错误'
+                    e_language = ma.group(1)
+                    e_title = e['title'][lan]
 
-                # process href
-                if e_href != '':
-                    pc['href'] = e_href
+                    # read origin json file
+                    global param
+                    param['webSiteNo'] = self.wmap[self.web]
+                    param['locale'] = self.lmap[e_language]
 
-                    if 'relatedId' in pc:
-                        m = re.search('.*\/(.*?)\.html', e['href'])
-                        if m:
-                            pc['relatedId'] = m.group(1)
+                    ori = json.loads(self.get_ori_json(param))
+                    pc = None
+                    if e_plat == 'pc':
+                        pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
+                    elif e_plat == 'ms' or e_plat == 'msite':
+                        pc = ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
 
-                # process src
-                pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1]
-                if 'src' in pc:
-                    path = self.gen_img_path(pic_name_jpg)
-                    path = self.upload_pic(pic_name_jpg, path)
-                    pc['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                    before.append(e_language+str(pc))
+                    #start process pc
+                    # process title
+                    if e_title != '':
+                        pc['title'] = e_title
+                        pc["styledTitle"] = e_title
+                        pc["refId"] = e_title.replace(' ', '')
 
+                    # process href
+                    if e_href != '':
+                        pc['href'] = e_href
 
+                        if 'relatedId' in pc:
+                            m = re.search('.*\/(.*?)\.html', e['href'])
+                            if m:
+                                pc['relatedId'] = m.group(1)
+
+                    # process src
+                    pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1]
+                    if 'src' in pc:
+                        path = self.gen_img_path(pic_name_jpg)
+                        path = self.upload_pic(pic_name_jpg, path)
+                        pc['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+
+                    after.append(e_language+str(pc))
+                    # write
+                    if e_plat == 'pc':
+                        ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
+                    elif e_plat == 'ms' or e_plat == 'msite':
+                        ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc
+
+                    # self.last_language = e_language
+                    # self.last_ori = ori
+
+                    self.write_json_file(self.resultfilepath + '/' + e_language + '.txt', ori)
+
+                # log
+                print('改动前：')
+                for l in before:
+                    print(l)
+                print('改动后：')
+                for l in after:
+                    print(l)
 
             # process type-images
             elif type == 'images':
-                for x in range(len(e_titles)):
+                before = None
+                after = None
+                for lan in e['title']:
+                    before = []
+                    after = []
 
-                    if e_titles[x] != '':
-                        pc['images'][x]['title'] = e_titles[x]
+                    ma = re.search('\((.*)\)', lan)
+                    assert not ma, '表头语言错误'
+                    e_language = ma.group(1)
 
-                    if e_hrefs[x] != '':
-                        pc['images'][x]['href'] = e_hrefs[x]
 
-                    # process src
-                    pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1] + str(x + 1)
-                    if 'src' in pc['images'][x]:
-                        path = self.gen_img_path(pic_name_jpg)
-                        path = self.upload_pic(pic_name_jpg, path)
-                        pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                    # read origin json file ,apply value to pc
+                    global param
+                    p=param
+                    p['webSiteNo'] = self.wmap[self.web]
+                    p['locale'] = self.lmap[e_language]
+
+                    ori = json.loads(self.get_ori_json(p))
+                    pc = None
+                    if e_plat == 'pc':
+                        pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
+                    elif e_plat == 'ms' or e_plat == 'msite':
+                        pc = ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
+
+                    before.append(e_language + str(pc))
+
+
+                    for x in range(len(e_titles)):
+
+                        e_title = e['title'][lan]
+
+                        # start process pc
+                        # process title and href
+                        if e_titles[x] != '':
+                            pc['images'][x]['title'] = e_titles[x][lan]
+
+                        if e_hrefs[x] != '':
+                            pc['images'][x]['href'] = e_hrefs[x]
+
+                        # process src
+                        pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1] + str(x + 1)
+                        if 'src' in pc['images'][x]:
+                            path = self.gen_img_path(pic_name_jpg)
+                            path = self.upload_pic(pic_name_jpg, path)
+                            pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+
+                    after.append(e_language + str(pc))
+
+                    # write
+                    if e_plat == 'pc':
+                        ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
+                    elif e_plat == 'ms' or e_plat == 'msite':
+                        ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][
+                            int(e_index) + 1] = pc
+
+                    # self.last_language = e_language
+                    # self.last_ori = ori
+
+                    self.write_json_file(self.resultfilepath + '/' + e_language + '.txt', ori)
+
+                # log
+                print('改动前：')
+                for l in before:
+                    print(l)
+                print('改动后：')
+                for l in after:
+                    print(l)
 
             # log
             print()
             print('改动后:')
             print(pc)
 
-            # write
-            if e_plat == 'pc':
-                ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
-            elif e_plat == 'ms':
-                ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc
 
-            filepath = 'result_' + self.current_dir[7:]
-            if not os.path.exists(filepath):
-                os.mkdir(filepath)
-
-            self.last_language = e_language
-            self.last_ori = ori
-
-            self.write_json_file(filepath + '/' + e_language + '.txt', ori)
 
             i += 1
 
@@ -307,6 +386,7 @@ class Gjson():
             self.do_config()
             self.configs = []
             self.last_language=''
+            self.web=''
 
 
 if __name__ == '__main__':
