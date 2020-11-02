@@ -8,11 +8,17 @@ from botocore.exceptions import ClientError
 import datetime
 import requests
 
-
 s = ''
 # attr=['index','src','title','href']
 title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号（从轮播图下开始）', 'title': '标题', 'href': '链接'}
 
+code_map={'pc':'M1236','ms':'M1236','ios':'M1284','an':'M1243'}
+
+unpo_locale = ['pt', 'sv', 'da', 'nb', 'is', 'fi']
+
+all_lan = ['en', 'fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
+
+all_plat_code = ['M1236', 'M1284', 'M1243']
 
 # with open('json.txt','r',encoding='UTF-8') as f:
 #     s=f.read()
@@ -21,14 +27,12 @@ title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号�
 
 s3_client = None
 
-url='http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
-param={'webSiteNo':'01','code':'M1236','locale':'en_US'}
-canUpFile=False
+url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
+param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
+canUpFile = False
 
 
 def upload_file(file_name, bucket, object_name=None):
-    if not canUpFile:
-        return True
     # If S3 object_name was not specified, use file_name
     if object_name is None:
         object_name = file_name
@@ -51,11 +55,13 @@ class Gjson():
     dirs = []
     current_dir = ''
 
-    last_language=''
-    last_ori=''
+    last_language = ''
+    last_ori = ''
 
-    wmap={}
-    lmap={}
+    web_code_lan={}
+
+    wmap = {}
+    lmap = {}
 
     def __init__(self):
         print('初始化中。。')
@@ -74,20 +80,20 @@ class Gjson():
         with open('wmap.txt', 'r', encoding='UTF-8') as f:
             line = f.readline()
             while line:
-                line=line.replace('\n','')
+                line = line.replace('\n', '')
                 s = line.split(' ')
-                self.wmap[s[2]]=s[0]
+                self.wmap[s[2]] = s[0]
                 line = f.readline()
 
         with open('lmap.txt', 'r', encoding='UTF-8') as f:
             line = f.readline()
             while line:
-                line=line.replace('\n','')
+                line = line.replace('\n', '')
                 s = line.split('_')
                 self.lmap[s[0]] = line
                 line = f.readline()
 
-    def get_ori_json(self,p):
+    def get_ori_json(self, p):
         lan = p['locale'].split('_')[0]
         code = p['code']
         ofile = 'result_' + self.current_dir[7:] + '/' + lan + '_' + code + '.txt'
@@ -98,6 +104,7 @@ class Gjson():
         else:
             res = requests.get(url=url, params=p)
             j = json.loads(res.text)
+            assert j['code'] == 200,'不存在该语言或平台：'+str(p)
             j = json.loads(j['result'])
         assert j
         return j
@@ -117,15 +124,36 @@ class Gjson():
         for row in range(1, rows):
             dic = {}
             ldic = {}
+            lanlist = []
             if table.cell_value(row, 0) == '':
                 continue
 
             for col in range(cols):
-                if table.cell_value(0, col).count('语') > 0:
+                value = table.cell_value(row, col)
+                title_value=table.cell_value(0, col)
+
+                if title_value == '平台':
+
+                    lanlist=self.web_code_lan[self.web][code_map[value]].copy()
+                if title_value.count('语') > 0:
+                    ma = re.search('（(.*)）', title_value)
+                    assert ma, '表头语言错误'
+                    e_language = ma.group(1)
+                    # if lanlist.__contains__(e_language):
+                    print(e_language)
+                    print(str(row)+','+str(col))
+                    lanlist.remove(e_language)
                     if table.cell_value(row, col) != '':
-                        ldic[table.cell_value(0, col)] = table.cell_value(row, col)
+                        ldic[e_language] = value
                 else:
-                    dic[table.cell_value(0, col)] = table.cell_value(row, col)
+
+                    if isinstance(value, float):
+                        dic[table.cell_value(0, col)] = int(value)
+                    else:
+                        dic[table.cell_value(0, col)] = value
+
+            for unpopl in lanlist:
+                ldic[unpopl]=ldic['en']
 
             dic['title'] = ldic
             self.configs.append(dic)
@@ -142,37 +170,32 @@ class Gjson():
             js = json.dumps(s)
             f.write(js)
 
-    def upload_pic(self, pic_name):
+    def upload_pic(self, picname_postfix):
         print()
-        print("开始上传图片：" + pic_name)
+        print("开始上传图片：" + picname_postfix)
 
-        pic_path = self.gen_img_path(pic_name)
+        pic_path = self.gen_img_path(picname_postfix)
 
-        lan = pic_name[0:2]
-        unpo_locale = ['pt', 'sv', 'da', 'nb', 'is', 'fi']
-        print(lan)
+        lan = picname_postfix[0:2]
 
-        if os.path.exists(self.current_dir + '/' + pic_name + '.jpg'):
-            pic_path += '.jpg'
-            upload_file(self.current_dir + '/' + pic_name + '.jpg', 'image.chic-fusion.com', pic_path)
-        elif os.path.exists(self.current_dir + '/' + pic_name + '.gif'):
-            pic_path += '.gif'
-            upload_file(self.current_dir + '/' + pic_name + '.gif', 'image.chic-fusion.com', pic_path)
-        else:
-
-            print('未找到图片：' + self.current_dir + '/' + pic_name)
+        if not os.path.exists(self.current_dir + '/' + picname_postfix):
+            print('未找到图片：' + self.current_dir + '/' + picname_postfix)
             if lan in unpo_locale:
-                pic_name = pic_name.replace(lan, 'en')
-                pic_path = self.gen_img_path(pic_name)
-                print('返回en图片链接：' + pic_path + '.jpg')
-                return pic_path + '.jpg'
+                picname_postfix = picname_postfix.replace(lan, 'en')
+                pic_path = self.gen_img_path(picname_postfix)
+                print('返回en图片链接：' + pic_path)
+                return pic_path
             else:
                 if canUpFile:
                     return None
                 else:
                     return pic_path
+        else:
+            if canUpFile:
+                upload_file(self.current_dir + '/' + picname_postfix, 'image.chic-fusion.com', pic_path)
         print('上传成功：https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + pic_path)
         return pic_path
+
     def is_imgs(self, i, n):
 
         e = self.configs[i]
@@ -206,7 +229,58 @@ class Gjson():
         path = 'zwb/' + self.web + '/' + datestr + '/' + img
         return path
 
+    def get_en_pic_postfix(self, en_picname):
+        allpic = os.scandir(self.current_dir)
+        postfixs = []
+        for e in allpic:
+            if e.name.startswith(en_picname):
+                postfix = e.name.replace(en_picname, '')
+                postfixs.append(postfix)
+        if len(postfixs) > 1:
+            for i in range(len(postfixs)):
+                postfixs[i] = postfixs[i][1:]
+        if len(postfixs) < 1:
+            if canUpFile:
+                raise AssertionError('找不到图片')
+            else:
+                postfixs.append('.jpg')
+        return postfixs
+
+    def add_unpo_lan_title(self):
+        # global param
+        # p=param
+        # p['locale']=self.lmap['pt']
+        #
+        # res = requests.get(url=url, params=p)
+        pass
+
+    def log_web_status(self):
+        self.web_code_lan[self.web] = {}
+        global param
+        p = param
+        print('网站' + self.web + "下所有首页code及其支持的语言：")
+        print()
+        for code in all_plat_code:
+            # p['webSiteNo']=self.wmap[self.web]
+            p['code'] = code
+            for lan in all_lan:
+                p['locale']=self.lmap[lan]
+                res = json.loads(requests.get(url=url, params=p).text)
+                if lan == 'en':
+                    self.web_code_lan[self.web][code] = []
+                    if res['code'] == 200:
+                        self.web_code_lan[self.web][code].append(lan)
+                        print(code,end=': en ')
+                    else:
+                        break
+                else:
+                    if res['code'] == 200:
+                        self.web_code_lan[self.web][code].append(lan)
+                        print(lan,end=' ')
+            print()
+
     def do_config(self):
+        # assign value to resultfilepath
         self.resultfilepath = 'result_' + self.current_dir[7:]
         if not os.path.exists(self.resultfilepath):
             os.mkdir(self.resultfilepath)
@@ -232,6 +306,8 @@ class Gjson():
             except:
                 raise AssertionError('config.xlxs标题非法')
 
+            postfixs = self.get_en_pic_postfix('en-' + str(e_index) + '-' + e_plat[:1])
+
             # is images?
             type = 'list'
             n_images = self.is_imgs(i, 0)
@@ -243,6 +319,12 @@ class Gjson():
             e_titles = []
             e_hrefs = []
             if type == 'images':
+                if len(postfixs) != n_images + 1:
+                    if canUpFile:
+                        raise AssertionError('找不到图片')
+                    else:
+                        for k in range(n_images+1):
+                            postfixs.append('.jpg')
                 for ii in range(n_images + 1):
                     if ii > 0:
                         print(self.configs[i + ii])
@@ -251,23 +333,26 @@ class Gjson():
 
             i += n_images
 
+            # 2 values to store logs
             before = []
             after = []
+
             for lan in e['title']:
-                ma = re.search('（(.*)）', lan)
-                assert ma, '表头语言错误'
-                e_language = ma.group(1)
+
+                e_language = lan
                 e_title = e['title'][lan]
+                picname = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1]
 
                 # read origin json file
                 global param
-                param['webSiteNo'] = self.wmap[self.web]
                 param['locale'] = self.lmap[e_language]
 
                 if e_plat == 'ios':
                     param['code'] = 'M1284'
                 elif e_plat == 'an':
                     param['code'] = 'M1243'
+                else:
+                    param['code'] = 'M1236'
 
                 ori = self.get_ori_json(param)
                 pc = None
@@ -280,7 +365,7 @@ class Gjson():
                     pc = ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1]
                     pc_old = ori["__Default_Country__"]["__Old_Customer__"]["shopView"][int(e_index) + 1]
 
-                before.append(e_language+str(pc))
+                before.append(e_language + str(pc))
 
                 # start process pc
                 # process type-list
@@ -300,7 +385,7 @@ class Gjson():
                         if m:
                             id = m.group(1)
                         else:
-                            raise AssertionError('链接格式有误：'+e_href)
+                            raise AssertionError('链接格式有误：' + e_href)
                         if e_plat == 'pc' or e_plat == 'ms':
                             pc['href'] = e_href
 
@@ -311,22 +396,19 @@ class Gjson():
                                 pc['id'] = id
                                 pc_old['id'] = id
 
-                    # process src (without ios and an images type, and .gif for ios)
+                    # process src (without ios and an images type)
                     if e_plat == 'pc' or e_plat == 'ms':
-                        pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1]
-
                         if 'src' in pc:
-                            # path = self.gen_img_path(pic_name_jpg)
-                            path = self.upload_pic(pic_name_jpg)
+                            # path = self.gen_img_path(picname)
+                            path = self.upload_pic(picname + postfixs[0])
 
                             pc['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
                     else:
-                        pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + 'm'
+                        picname[-1] = 'm'
 
                         if "titleImage" in pc:
-                            path = self.gen_img_path(pic_name_jpg)
-                            pc[
-                                'titleImage'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path + '.jpg'
+                            path = self.gen_img_path(picname)
+                            pc['titleImage'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path +  postfixs[0]
                 # process type-images
                 elif type == 'images':
                     for x in range(len(e_titles)):
@@ -338,14 +420,12 @@ class Gjson():
                             pc['images'][x]['href'] = e_hrefs[x]
 
                         # process src
-                        pic_name_jpg = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1] + str(x + 1)
+                        picname += str(x + 1)
                         if 'src' in pc['images'][x]:
-                            path = self.upload_pic(pic_name_jpg)
+                            path = self.upload_pic(picname + postfixs[x])
                             pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
 
-
-
-                after.append(e_language+str(pc))
+                after.append(e_language + str(pc))
                 # write
                 if e_plat == 'pc':
                     ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
@@ -369,21 +449,23 @@ class Gjson():
             for l in after:
                 print(l)
 
-
             i += 1
 
     def run(self):
+        print('WARNNING:小语种的改动将自动跟随英语')
         for dir in self.dirs:
             dir_sp = dir.split('_')
             self.web = dir_sp[1]
+            param['webSiteNo'] = self.wmap[self.web]
             self.current_dir = dir
             print('*' * 40)
             print('开始处理文件夹:' + dir)
+            self.log_web_status()
             self.read_config()
             self.do_config()
             self.configs = []
-            self.last_language=None
-            self.web=None
+            self.last_language = None
+            self.web = None
 
 
 if __name__ == '__main__':
