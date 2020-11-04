@@ -58,9 +58,6 @@ class Gjson():
     dirs = []
     current_dir = ''
 
-    last_language = ''
-    last_ori = ''
-
     web_code_lan = {}
 
     wmap = {}
@@ -107,6 +104,10 @@ class Gjson():
                 line = f.readline()
 
     def get_ori_json(self, p):
+        """该函数通过p参数，获取wanna里特定网站编号、编码类型、语言（locale）的‘json文本’（如果本地result_开头的文件夹下存在该‘json文本’，则读取本地的）
+        p参数是字典，示例:{'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
+        """
+
         lan = p['locale'].split('_')[0]
         code = p['code']
         ofile = 'result_' + self.current_dir[7:] + '/' + lan + '_' + code + '.txt'
@@ -122,10 +123,11 @@ class Gjson():
         assert j
         return j
 
-    # def write_result(self):
-
     # read xlxs file named config***
     def read_config(self):
+        """该函数读取文件夹下的config.xlxs文件，调用后以下属性会发生变化：
+        self.configs
+        """
         # self.config_jsons=self.read_json_file('config.txt')
         config_xlxs_path = self.current_dir + "/config.xlsx"
         assert os.path.exists(config_xlxs_path), config_xlxs_path + '不存在'
@@ -173,16 +175,31 @@ class Gjson():
         # print(list)
 
     def read_json_file(self, o):
+        """读取一个json文本
+        :arg
+        o {str} -- 文件路径
+        :returns
+        str -- json对象的字符串
+        """
         with open(o, 'r', encoding='UTF-8') as f:
             s = f.read()
             return json.loads(s)
 
     def write_json_file(self, o, s):
+        """将一个json对象写入指定文件路径下的文本
+        :arg
+        o {str} -- 文件路径
+        s {dict} -- json对象
+        """
         with open(o, 'w', encoding='UTF-8') as f:
             js = json.dumps(s)
             f.write(js)
 
     def upload_pic(self, picname_postfix):
+        """上传图片到亚马逊s3服务器
+        :arg
+        picname_postfix {str} -- 带后缀的图片名，如：en-1-p.jpg
+        """
         print()
         print("开始上传图片：" + picname_postfix)
 
@@ -209,6 +226,13 @@ class Gjson():
         return pic_path
 
     def is_imgs(self, i, n):
+        """用于判断该配置的板块是不是images类型(如：双图板块)
+        :arg
+        i {int} -- 配置的序号(位于self.configs)
+        n {int} -- 图片的个数，初次调用传0
+        :returns
+        int -- 图片个数
+        """
 
         e = self.configs[i]
         e_plat = e[title_map['plat']]
@@ -230,6 +254,12 @@ class Gjson():
         return n
 
     def gen_img_path(self, img):
+        """生成一个路径，用于放入亚马逊服务器
+        :arg
+        img {str} -- 图片名,如en-1-p
+        :returns
+        str -- 生成的路径，如：zwb/fablistme/20201104/en-1-m1.jpg
+        """
         y = str(datetime.datetime.now().year)
         m = str(datetime.datetime.now().month)
         d = str(datetime.datetime.now().day)
@@ -242,6 +272,12 @@ class Gjson():
         return path
 
     def get_en_pic_postfix(self, en_picname):
+        """获得en开头图片的后缀，如：en-1-p.jpg的后缀为.jpg
+        :arg
+        en_picname {str} -- en开头的图片名
+        :returns
+        str or list -- 后缀名，如果双图板块，en图片有两张，则返回存有两个str的list,如:['.jpg','.gif']
+        """
         allpic = os.scandir(self.current_dir)
         postfixs = []
         for e in allpic:
@@ -258,15 +294,8 @@ class Gjson():
                 postfixs.append('.jpg')
         return postfixs
 
-    def add_unpo_lan_title(self):
-        # global param
-        # p=param
-        # p['locale']=self.lmap['pt']
-        #
-        # res = requests.get(url=url, params=p)
-        pass
-
     def log_dict_format(self, dict):
+        """用于输出self.web_code_lan，如：网站fablistme下所有首页code及其支持的语言：M1236: en """
         print()
         print('网站' + self.web + "下所有首页code及其支持的语言：")
         for code in dict:
@@ -277,7 +306,10 @@ class Gjson():
                     print(lan, end=' ')
             print()
 
-    def log_web_status(self):
+    def get_web_status(self):
+        """检测网站的状态，如拥有几种编码，每种编码下有几种语言。
+        检测的结果存入self.web_code_lan
+        """
 
         if self.web in self.web_code_lan:
             self.log_dict_format(self.web_code_lan[self.web])
@@ -304,6 +336,7 @@ class Gjson():
             self.log_dict_format(self.web_code_lan[self.web])
 
     def auto_bk(self):
+        """将该网站下的所有的json文本备份到 'bk_网站名' 目录下"""
         global param
         p = param.copy()
         bk_file = 'bk_' + self.web
@@ -317,6 +350,14 @@ class Gjson():
                 self.write_json_file(bk_file + '/' + locale + '_' + code + '.txt', json.loads(res['result']))
 
     def do_config(self):
+        """最主要的函数，处理self.configs里的配置：修改原json并将结果写入'result_网站'目录下。
+        函数较长，需要记住其最外三层逻辑结构：
+        while(for(if/else))
+        第一层while：遍历每一项配置        while i < len(self.configs):
+        第二层for：遍历该项配置的每种语言            for lan in e['title']:
+        第三层if/else: 特殊处理images类型的配置               if type == 'list':elif type == 'images':
+
+        """
         # assign value to resultfilepath
         self.resultfilepath = 'result_' + self.current_dir[7:]
         if not os.path.exists(self.resultfilepath):
@@ -370,7 +411,7 @@ class Gjson():
 
             i += n_images
 
-            # 2 values to store logs
+            # 4 values to store logs
             before = []
             before_lan = []
             after = []
@@ -419,7 +460,7 @@ class Gjson():
                         else:
                             pc_old['title'] = e_title
 
-                    # process href (without ios and an)
+                    # process href
                     if e_href != '':
                         m = re.search('.*\/(.*?)\.html', e_href)
                         if m:
@@ -436,7 +477,7 @@ class Gjson():
                                 pc['id'] = id
                                 pc_old['id'] = id
 
-                    # process src (without ios and an images type)
+                    # process src
                     if e_plat == 'pc' or e_plat == 'ms':
                         if 'src' in pc:
                             # path = self.gen_img_path(picname)
@@ -497,19 +538,21 @@ class Gjson():
 
     def run(self):
         for dir in self.dirs:
+            # process some variables
             dir_sp = dir.split('_')
             self.web = dir_sp[1]
             param['webSiteNo'] = self.wmap[self.web]
             self.current_dir = dir
+
             print('*' * 40)
             print('开始处理文件夹:' + dir)
-            self.log_web_status()
+
+            self.get_web_status()
             self.read_config()
             self.do_config()
             self.auto_bk()
             self.configs = []
-            self.last_language = None
-            self.web = None
+
         self.write_json_file('web_code_lan.txt', self.web_code_lan)
 
 
