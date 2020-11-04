@@ -29,7 +29,10 @@ s3_client = None
 
 url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
+
+# configuration
 canUpFile = False
+autoBk = True
 
 
 def upload_file(file_name, bucket, object_name=None):
@@ -64,8 +67,14 @@ class Gjson():
     lmap = {}
 
     def __init__(self):
+        print('WARNNING:小语种的改动将自动跟随英语')
         print('初始化中。。')
         # self.json_ori = self.read_json_file('json.txt')
+        if not canUpFile:
+            print('假上传开启, 图片不会实际上传')
+
+        if autoBk:
+            print('自动备份开启')
         os.environ["AWS_SHARED_CREDENTIALS_FILE"] = 'C:\\credentials.txt'
 
         # find all dir
@@ -75,7 +84,11 @@ class Gjson():
                 if e.name.startswith('config_'):
                     self.dirs.append(e.name)
 
-        # read wmap and lmap into memory
+        # read web_code_lan, wmap and lmap  into memory
+        try:
+            self.web_code_lan = self.read_json_file('web_code_lan.txt')
+        except:
+            self.web_code_lan = {}
 
         with open('wmap.txt', 'r', encoding='UTF-8') as f:
             line = f.readline()
@@ -139,8 +152,6 @@ class Gjson():
                     assert ma, '表头语言错误'
                     e_language = ma.group(1)
                     # if lanlist.__contains__(e_language):
-                    print(e_language)
-                    print(str(row) + ',' + str(col))
                     lanlist.remove(e_language)
                     if table.cell_value(row, col) != '':
                         ldic[e_language] = value
@@ -253,30 +264,55 @@ class Gjson():
         # res = requests.get(url=url, params=p)
         pass
 
-    def log_web_status(self):
-        self.web_code_lan[self.web] = {}
-        global param
-        p = param
-        print('网站' + self.web + "下所有首页code及其支持的语言：")
+    def log_dict_format(self, dict):
         print()
-        for code in all_plat_code:
-            # p['webSiteNo']=self.wmap[self.web]
-            p['code'] = code
-            for lan in all_lan:
-                p['locale'] = self.lmap[lan]
-                res = json.loads(requests.get(url=url, params=p).text)
+        print('网站' + self.web + "下所有首页code及其支持的语言：")
+        for code in dict:
+            for lan in dict[code]:
                 if lan == 'en':
-                    self.web_code_lan[self.web][code] = []
-                    if res['code'] == 200:
-                        self.web_code_lan[self.web][code].append(lan)
-                        print(code, end=': en ')
-                    else:
-                        break
+                    print(code, end=': en ')
                 else:
-                    if res['code'] == 200:
-                        self.web_code_lan[self.web][code].append(lan)
-                        print(lan, end=' ')
+                    print(lan, end=' ')
             print()
+
+    def log_web_status(self):
+
+        if self.web in self.web_code_lan:
+            self.log_dict_format(self.web_code_lan[self.web])
+        else:
+            self.web_code_lan[self.web] = {}
+            global param
+            p = param
+
+            for code in all_plat_code:
+                # p['webSiteNo']=self.wmap[self.web]
+                p['code'] = code
+                for lan in all_lan:
+                    p['locale'] = self.lmap[lan]
+                    res = json.loads(requests.get(url=url, params=p).text)
+                    if lan == 'en':
+                        if res['code'] == 200:
+                            self.web_code_lan[self.web][code] = []
+                            self.web_code_lan[self.web][code].append(lan)
+                        else:
+                            break
+                    else:
+                        if res['code'] == 200:
+                            self.web_code_lan[self.web][code].append(lan)
+            self.log_dict_format(self.web_code_lan[self.web])
+
+    def auto_bk(self):
+        global param
+        p = param.copy()
+        bk_file = 'bk_' + self.web
+        for code in self.web_code_lan[self.web]:
+            p['code'] = code
+            for locale in self.web_code_lan[self.web][code]:
+                p['locale'] = self.lmap[locale]
+                res = json.loads(requests.get(url=url, params=p).text)
+                if not os.path.exists(bk_file):
+                    os.mkdir(bk_file)
+                self.write_json_file(bk_file + '/' + locale + '_' + code + '.txt', res['result'])
 
     def do_config(self):
         # assign value to resultfilepath
@@ -414,7 +450,7 @@ class Gjson():
                     for x in range(len(e_titles)):
 
                         if e_titles[x] != '':
-                            pc['images'][x]['title'] = e_titles[x]
+                            pc['images'][x]['title'] = e_titles[x][lan]
 
                         if e_hrefs[x] != '':
                             pc['images'][x]['href'] = e_hrefs[x]
@@ -452,7 +488,6 @@ class Gjson():
             i += 1
 
     def run(self):
-        print('WARNNING:小语种的改动将自动跟随英语')
         for dir in self.dirs:
             dir_sp = dir.split('_')
             self.web = dir_sp[1]
@@ -461,11 +496,13 @@ class Gjson():
             print('*' * 40)
             print('开始处理文件夹:' + dir)
             self.log_web_status()
+            self.auto_bk()
             self.read_config()
             self.do_config()
             self.configs = []
             self.last_language = None
             self.web = None
+        self.write_json_file('web_code_lan.txt', self.web_code_lan)
 
 
 if __name__ == '__main__':
