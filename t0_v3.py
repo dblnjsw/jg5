@@ -150,6 +150,8 @@ class Gjson():
                 if title_value.count('语') > 0:
                     ma = re.search('（(.*)）', title_value)
                     assert ma, '表头语言错误'
+                    if value == '':
+                        continue
                     e_language = ma.group(1)
                     # if lanlist.__contains__(e_language):
                     lanlist.remove(e_language)
@@ -312,7 +314,7 @@ class Gjson():
                 res = json.loads(requests.get(url=url, params=p).text)
                 if not os.path.exists(bk_file):
                     os.mkdir(bk_file)
-                self.write_json_file(bk_file + '/' + locale + '_' + code + '.txt', res['result'])
+                self.write_json_file(bk_file + '/' + locale + '_' + code + '.txt', json.loads(res['result']))
 
     def do_config(self):
         # assign value to resultfilepath
@@ -456,9 +458,9 @@ class Gjson():
                             pc['images'][x]['href'] = e_hrefs[x]
 
                         # process src
-                        picname += str(x + 1)
+                        picname_num = picname + str(x + 1)
                         if 'src' in pc['images'][x]:
-                            path = self.upload_pic(picname + postfixs[x])
+                            path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
 
                 after.append(e_language + str(pc))
@@ -496,9 +498,9 @@ class Gjson():
             print('*' * 40)
             print('开始处理文件夹:' + dir)
             self.log_web_status()
-            self.auto_bk()
             self.read_config()
             self.do_config()
+            self.auto_bk()
             self.configs = []
             self.last_language = None
             self.web = None
