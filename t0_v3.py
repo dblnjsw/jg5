@@ -12,7 +12,7 @@ s = ''
 # attr=['index','src','title','href']
 title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号（从轮播图下开始）', 'title': '标题', 'href': '链接'}
 
-code_map={'pc':'M1236','ms':'M1236','ios':'M1284','an':'M1243'}
+code_map = {'pc': 'M1236', 'ms': 'M1236', 'ios': 'M1284', 'an': 'M1243'}
 
 unpo_locale = ['pt', 'sv', 'da', 'nb', 'is', 'fi']
 
@@ -58,7 +58,7 @@ class Gjson():
     last_language = ''
     last_ori = ''
 
-    web_code_lan={}
+    web_code_lan = {}
 
     wmap = {}
     lmap = {}
@@ -104,7 +104,7 @@ class Gjson():
         else:
             res = requests.get(url=url, params=p)
             j = json.loads(res.text)
-            assert j['code'] == 200,'不存在该语言或平台：'+str(p)
+            assert j['code'] == 200, '不存在该语言或平台：' + str(p)
             j = json.loads(j['result'])
         assert j
         return j
@@ -130,18 +130,17 @@ class Gjson():
 
             for col in range(cols):
                 value = table.cell_value(row, col)
-                title_value=table.cell_value(0, col)
+                title_value = table.cell_value(0, col)
 
                 if title_value == '平台':
-
-                    lanlist=self.web_code_lan[self.web][code_map[value]].copy()
+                    lanlist = self.web_code_lan[self.web][code_map[value]].copy()
                 if title_value.count('语') > 0:
                     ma = re.search('（(.*)）', title_value)
                     assert ma, '表头语言错误'
                     e_language = ma.group(1)
                     # if lanlist.__contains__(e_language):
                     print(e_language)
-                    print(str(row)+','+str(col))
+                    print(str(row) + ',' + str(col))
                     lanlist.remove(e_language)
                     if table.cell_value(row, col) != '':
                         ldic[e_language] = value
@@ -153,7 +152,7 @@ class Gjson():
                         dic[table.cell_value(0, col)] = value
 
             for unpopl in lanlist:
-                ldic[unpopl]=ldic['en']
+                ldic[unpopl] = ldic['en']
 
             dic['title'] = ldic
             self.configs.append(dic)
@@ -264,19 +263,19 @@ class Gjson():
             # p['webSiteNo']=self.wmap[self.web]
             p['code'] = code
             for lan in all_lan:
-                p['locale']=self.lmap[lan]
+                p['locale'] = self.lmap[lan]
                 res = json.loads(requests.get(url=url, params=p).text)
                 if lan == 'en':
                     self.web_code_lan[self.web][code] = []
                     if res['code'] == 200:
                         self.web_code_lan[self.web][code].append(lan)
-                        print(code,end=': en ')
+                        print(code, end=': en ')
                     else:
                         break
                 else:
                     if res['code'] == 200:
                         self.web_code_lan[self.web][code].append(lan)
-                        print(lan,end=' ')
+                        print(lan, end=' ')
             print()
 
     def do_config(self):
@@ -323,7 +322,7 @@ class Gjson():
                     if canUpFile:
                         raise AssertionError('找不到图片')
                     else:
-                        for k in range(n_images+1):
+                        for k in range(n_images + 1):
                             postfixs.append('.jpg')
                 for ii in range(n_images + 1):
                     if ii > 0:
@@ -408,7 +407,8 @@ class Gjson():
 
                         if "titleImage" in pc:
                             path = self.gen_img_path(picname)
-                            pc['titleImage'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path +  postfixs[0]
+                            pc['titleImage'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path + \
+                                               postfixs[0]
                 # process type-images
                 elif type == 'images':
                     for x in range(len(e_titles)):
