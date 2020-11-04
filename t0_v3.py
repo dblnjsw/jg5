@@ -372,7 +372,9 @@ class Gjson():
 
             # 2 values to store logs
             before = []
+            before_lan = []
             after = []
+            after_lan = []
 
             for lan in e['title']:
 
@@ -402,7 +404,8 @@ class Gjson():
                     pc = ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1]
                     pc_old = ori["__Default_Country__"]["__Old_Customer__"]["shopView"][int(e_index) + 1]
 
-                before.append(e_language + str(pc))
+                before.append(pc)
+                before_lan.append(e_language)
 
                 # start process pc
                 # process type-list
@@ -463,7 +466,8 @@ class Gjson():
                             path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
 
-                after.append(e_language + str(pc))
+                after.append(pc)
+                after_lan.append(e_language)
                 # write
                 if e_plat == 'pc':
                     ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
@@ -481,11 +485,13 @@ class Gjson():
             # log
             print()
             print('改动前：')
-            for l in before:
-                print(l)
+            for l in range(len(before)):
+                print(before_lan[l])
+                print(json.dumps(before[l], sort_keys=True, indent=4, separators=(', ', ': ')))
             print('改动后：')
-            for l in after:
-                print(l)
+            for l in range(len(after)):
+                print(after_lan[l])
+                print(json.dumps(after[l], sort_keys=True, indent=4, separators=(', ', ': ')))
 
             i += 1
 
