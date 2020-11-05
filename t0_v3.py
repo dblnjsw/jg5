@@ -14,7 +14,7 @@ title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号�
 
 code_map = {'pc': 'M1236', 'ms': 'M1236', 'ios': 'M1284', 'an': 'M1243'}
 
-unpo_locale = ['pt', 'sv', 'da', 'nb', 'is', 'fi']
+unpo_locale = ['fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
 
 all_lan = ['en', 'fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
 
@@ -31,7 +31,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = False
+canUpFile = True
 autoBk = True
 
 
@@ -540,7 +540,7 @@ class Gjson():
         for dir in self.dirs:
             # process some variables
             dir_sp = dir.split('_')
-            self.web = dir_sp[1]
+            self.web = dir_sp[1].replace('.', '_')
             param['webSiteNo'] = self.wmap[self.web]
             self.current_dir = dir
 

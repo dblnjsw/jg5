@@ -1,1 +1,1 @@
-{"boutiquefeel-us": {"M1236": ["en", "fr", "de", "es"], "M1284": ["en"], "M1243": ["en"]}, "ivrose-uk": {"M1236": ["en", "fr", "de", "es", "pt", "sv", "da", "nb", "is", "fi"]}, "fablistme": {"M1236": ["en"]}}
+{"boutiquefeel-us": {"M1236": ["en", "fr", "de", "es"], "M1284": ["en"], "M1243": ["en"]}, "ivrose-uk": {"M1236": ["en", "fr", "de", "es", "pt", "sv", "da", "nb", "is", "fi"]}, "fablistme": {"M1236": ["en"]}, "clothmyths_zy": {"M1236": ["en", "fr", "de", "es", "pt"]}}
