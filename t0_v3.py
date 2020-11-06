@@ -12,13 +12,13 @@ s = ''
 # attr=['index','src','title','href']
 title_map = {'plat': '平台', 'language': '语言', 'index': '板块的序号（从轮播图下开始）', 'title': '标题', 'href': '链接'}
 
-code_map = {'pc': 'M1236', 'ms': 'M1236', 'ios': 'M1284', 'an': 'M1243'}
+code_map = {'pc': 'M1236', 'ms': 'M1236', 'ios': 'M1284', 'an': 'M1243', 'pc1316': 'M1316', 'ms1316': 'M1316'}
 
 unpo_locale = ['fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
 
 all_lan = ['en', 'fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
 
-all_plat_code = ['M1236', 'M1284', 'M1243']
+all_plat_code = ['M1236', 'M1284', 'M1243', 'M1316']
 
 # with open('json.txt','r',encoding='UTF-8') as f:
 #     s=f.read()
@@ -31,7 +31,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = True
+canUpFile = False
 autoBk = True
 
 
@@ -69,9 +69,13 @@ class Gjson():
         # self.json_ori = self.read_json_file('json.txt')
         if not canUpFile:
             print('假上传开启, 图片不会实际上传')
+        else:
+            print('上传开启')
 
         if autoBk:
             print('自动备份开启')
+        else:
+            print('自动备份关闭')
         os.environ["AWS_SHARED_CREDENTIALS_FILE"] = 'C:\\credentials.txt'
 
         # find all dir
@@ -425,27 +429,22 @@ class Gjson():
 
                 # read origin json file
                 global param
+                global code_map
                 param['locale'] = self.lmap[e_language]
-
-                if e_plat == 'ios':
-                    param['code'] = 'M1284'
-                elif e_plat == 'an':
-                    param['code'] = 'M1243'
-                else:
-                    param['code'] = 'M1236'
+                param['code'] = code_map[e_plat]
 
                 ori = self.get_ori_json(param)
                 pc = None
                 pc_old = None
-                if e_plat == 'pc':
+                if e_plat == 'pc' or e_plat == 'pc1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
-                elif e_plat == 'ms' or e_plat == 'msite':
+                elif e_plat == 'ms' or e_plat == 'msite' or e_plat == 'ms1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
                 elif e_plat == 'ios' or e_plat == 'an':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1]
                     pc_old = ori["__Default_Country__"]["__Old_Customer__"]["shopView"][int(e_index) + 1]
 
-                before.append(pc)
+                before.append(pc.copy())
                 before_lan.append(e_language)
 
                 # start process pc
@@ -454,7 +453,7 @@ class Gjson():
                     # process title
                     if e_title != '':
                         pc['title'] = e_title
-                        if e_plat == 'pc' or e_plat == 'ms':
+                        if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                             pc["styledTitle"] = e_title
                             pc["refId"] = e_title.replace(' ', '')
                         else:
@@ -467,7 +466,7 @@ class Gjson():
                             id = m.group(1)
                         else:
                             raise AssertionError('链接格式有误：' + e_href)
-                        if e_plat == 'pc' or e_plat == 'ms':
+                        if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                             pc['href'] = e_href
 
                             if 'relatedId' in pc:
@@ -478,14 +477,14 @@ class Gjson():
                                 pc_old['id'] = id
 
                     # process src
-                    if e_plat == 'pc' or e_plat == 'ms':
+                    if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                         if 'src' in pc:
                             # path = self.gen_img_path(picname)
                             path = self.upload_pic(picname + postfixs[0])
 
                             pc['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
                     else:
-                        picname[-1] = 'm'
+                        picname = picname[:-1] + 'm'
 
                         if "titleImage" in pc:
                             path = self.gen_img_path(picname)
@@ -506,13 +505,17 @@ class Gjson():
                         if 'src' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                        if 'imageUrl' in pc['images'][x]:
+                            pc['images'][x]['imageUrl'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
 
-                after.append(pc)
+
+
+                after.append(pc.copy())
                 after_lan.append(e_language)
                 # write
-                if e_plat == 'pc':
+                if e_plat == 'pc' or e_plat == 'pc1316':
                     ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
-                elif e_plat == 'ms' or e_plat == 'msite':
+                elif e_plat == 'ms' or e_plat == 'msite' or e_plat == 'ms1316':
                     ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc
                 elif e_plat == 'ios' or e_plat == 'an':
                     ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1] = pc
@@ -525,14 +528,13 @@ class Gjson():
 
             # log
             print()
-            print('改动前：')
             for l in range(len(before)):
                 print(before_lan[l])
+                print('改动前：')
                 print(json.dumps(before[l], sort_keys=True, indent=4, separators=(', ', ': ')))
-            print('改动后：')
-            for l in range(len(after)):
-                print(after_lan[l])
+                print('改动后：')
                 print(json.dumps(after[l], sort_keys=True, indent=4, separators=(', ', ': ')))
+                print()
 
             i += 1
 
