@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 import datetime
 import requests
+import copy
 
 s = ''
 # attr=['index','src','title','href']
@@ -444,7 +445,7 @@ class Gjson():
                     pc = ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1]
                     pc_old = ori["__Default_Country__"]["__Old_Customer__"]["shopView"][int(e_index) + 1]
 
-                before.append(pc.copy())
+                before.append(copy.deepcopy(pc))
                 before_lan.append(e_language)
 
                 # start process pc
@@ -506,11 +507,12 @@ class Gjson():
                             path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
                         if 'imageUrl' in pc['images'][x]:
+                            path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x]['imageUrl'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
 
 
 
-                after.append(pc.copy())
+                after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)
                 # write
                 if e_plat == 'pc' or e_plat == 'pc1316':
