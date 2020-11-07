@@ -437,10 +437,15 @@ class Gjson():
                 ori = self.get_ori_json(param)
                 pc = None
                 pc_old = None
+                pc_GB = None
                 if e_plat == 'pc' or e_plat == 'pc1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
+                    if lan == 'en':
+                        pc_GB = ori["GB"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
                 elif e_plat == 'ms' or e_plat == 'msite' or e_plat == 'ms1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
+                    if lan == 'en':
+                        pc_GB = ori["GB"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
                 elif e_plat == 'ios' or e_plat == 'an':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1]
                     pc_old = ori["__Default_Country__"]["__Old_Customer__"]["shopView"][int(e_index) + 1]
@@ -457,6 +462,10 @@ class Gjson():
                         if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                             pc["styledTitle"] = e_title
                             pc["refId"] = e_title.replace(' ', '')
+                            if pc_GB:
+                                pc_GB["styledTitle"] = e_title
+                                pc_GB["refId"] = e_title.replace(' ', '')
+                                pc_GB['title'] = e_title
                         else:
                             pc_old['title'] = e_title
 
@@ -469,9 +478,14 @@ class Gjson():
                             raise AssertionError('链接格式有误：' + e_href)
                         if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                             pc['href'] = e_href
+                            if pc_GB:
+                                pc_GB['href'] = e_href
 
                             if 'relatedId' in pc:
                                 pc['relatedId'] = id
+                                if pc_GB:
+                                    pc_GB['relatedId'] = id
+
                         else:
                             if 'id' in pc:
                                 pc['id'] = id
@@ -484,6 +498,8 @@ class Gjson():
                             path = self.upload_pic(picname + postfixs[0])
 
                             pc['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                            if pc_GB:
+                                pc_GB['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
                     else:
                         picname = picname[:-1] + 'm'
 
@@ -497,11 +513,24 @@ class Gjson():
 
                         if e_titles[x] != '':
                             pc['images'][x]['title'] = e_titles[x][lan]
+                            if pc_GB:
+                                pc_GB['images'][x]['title'] = e_titles[x][lan]
 
                         if e_hrefs[x] != '':
                             pc['images'][x]['href'] = e_hrefs[x]
+                            if pc_GB:
+                                pc_GB['images'][x]['href'] = e_hrefs[x]
 
-                        # process src
+                        if 'refId' in pc['images'][x]:
+                            pc['images'][x]['refId'] = e_titles[x]['en']
+                            if pc_GB:
+                                pc_GB['images'][x]['refId'] = e_titles[x]['en']
+
+                    # process src
+                        if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
+                            pass
+                        else:
+                            picname = picname[:-1] + 'm'
                         picname_num = picname + str(x + 1)
                         if 'src' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
@@ -517,8 +546,12 @@ class Gjson():
                 # write
                 if e_plat == 'pc' or e_plat == 'pc1316':
                     ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
+                    if lan == 'en':
+                        ori["GB"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc_GB
                 elif e_plat == 'ms' or e_plat == 'msite' or e_plat == 'ms1316':
                     ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc
+                    if lan == 'en':
+                        ori["GB"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc_GB
                 elif e_plat == 'ios' or e_plat == 'an':
                     ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1] = pc
                     ori["__Default_Country__"]["__Old_Customer__"]["shopView"][int(e_index) + 1] = pc_old

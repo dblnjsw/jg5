@@ -7,4 +7,6 @@ def download_json():
     j=json.loads(res.text)
     print()
 
-download_json()
+st='en-1-i'
+st=st[:-1]+'m'
+print(st)
