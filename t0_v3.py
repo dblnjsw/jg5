@@ -458,7 +458,8 @@ class Gjson():
                 if type == 'list':
                     # process title
                     if e_title != '':
-                        pc['title'] = e_title
+                        if 'title' in pc:
+                            pc['title'] = e_title
                         if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                             pc["styledTitle"] = e_title
                             pc["refId"] = e_title.replace(' ', '')
@@ -512,12 +513,20 @@ class Gjson():
                     for x in range(len(e_titles)):
 
                         if e_titles[x] != '':
-                            pc['images'][x]['title'] = e_titles[x][lan]
+                            if 'title' in pc['images'][x]:
+                                pc['images'][x]['title'] = e_titles[x][lan]
                             if pc_GB:
                                 pc_GB['images'][x]['title'] = e_titles[x][lan]
 
                         if e_hrefs[x] != '':
-                            pc['images'][x]['href'] = e_hrefs[x]
+                            m = re.search('.*\/(.*?)\.html', e_href)
+                            if m:
+                                id = m.group(1)
+                            if 'deepLink' in pc['images'][x]:
+                                pc['images'][x]['deepLink']['params'][0] = id
+                                pc['images'][x]['deepLink']['params'][1] = e_titles[x][lan]
+                            if 'href' in pc['images'][x]:
+                                pc['images'][x]['href'] = e_hrefs[x]
                             if pc_GB:
                                 pc_GB['images'][x]['href'] = e_hrefs[x]
 
@@ -526,7 +535,7 @@ class Gjson():
                             if pc_GB:
                                 pc_GB['images'][x]['refId'] = e_titles[x]['en']
 
-                    # process src
+                        # process src
                         if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                             pass
                         else:
@@ -537,9 +546,8 @@ class Gjson():
                             pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
                         if 'imageUrl' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
-                            pc['images'][x]['imageUrl'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
-
-
+                            pc['images'][x][
+                                'imageUrl'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
 
                 after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)
