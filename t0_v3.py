@@ -21,6 +21,8 @@ all_lan = ['en', 'fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
 
 all_plat_code = ['M1236', 'M1284', 'M1243', 'M1316']
 
+
+
 # with open('json.txt','r',encoding='UTF-8') as f:
 #     s=f.read()
 # j=json.loads(s)
@@ -32,7 +34,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = False
+canUpFile = False   #如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
 autoBk = True
 
 
@@ -64,12 +66,16 @@ class Gjson():
     wmap = {}
     lmap = {}
 
+    s3_prefix = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/'
+    dgz_prefix = 'https://dgzfssf1la12s.cloudfront.net/'
+
     def __init__(self):
         print('WARNNING:小语种的改动将自动跟随英语')
         print('初始化中。。')
         # self.json_ori = self.read_json_file('json.txt')
         if not canUpFile:
-            print('假上传开启, 图片不会实际上传')
+            print('关闭上传, 图片不会实际上传')
+            self.s3_prefix=self.dgz_prefix
         else:
             print('上传开启')
 
@@ -498,15 +504,15 @@ class Gjson():
                             # path = self.gen_img_path(picname)
                             path = self.upload_pic(picname + postfixs[0])
 
-                            pc['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                            pc['src'] = self.s3_prefix + path
                             if pc_GB:
-                                pc_GB['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                                pc_GB['src'] = self.s3_prefix + path
                     else:
                         picname = picname[:-1] + 'm'
 
                         if "titleImage" in pc:
                             path = self.gen_img_path(picname)
-                            pc['titleImage'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path + \
+                            pc['titleImage'] = self.s3_prefix + path + \
                                                postfixs[0]
                 # process type-images
                 elif type == 'images':
@@ -543,11 +549,11 @@ class Gjson():
                         picname_num = picname + str(x + 1)
                         if 'src' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
-                            pc['images'][x]['src'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                            pc['images'][x]['src'] = self.s3_prefix + path
                         if 'imageUrl' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x][
-                                'imageUrl'] = 'https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + path
+                                'imageUrl'] = self.s3_prefix + path
 
                 after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)
