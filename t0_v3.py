@@ -440,11 +440,11 @@ class Gjson():
                 pc_GB = None
                 if e_plat == 'pc' or e_plat == 'pc1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
-                    if lan == 'en':
+                    if lan == 'en' and 'GB' in ori:
                         pc_GB = ori["GB"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
                 elif e_plat == 'ms' or e_plat == 'msite' or e_plat == 'ms1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
-                    if lan == 'en':
+                    if lan == 'en' and 'GB' in ori:
                         pc_GB = ori["GB"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1]
                 elif e_plat == 'ios' or e_plat == 'an':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1]
@@ -554,11 +554,11 @@ class Gjson():
                 # write
                 if e_plat == 'pc' or e_plat == 'pc1316':
                     ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc
-                    if lan == 'en':
+                    if lan == 'en' and 'GB' in ori:
                         ori["GB"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1] = pc_GB
                 elif e_plat == 'ms' or e_plat == 'msite' or e_plat == 'ms1316':
                     ori["__Default_Country__"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc
-                    if lan == 'en':
+                    if lan == 'en' and 'GB' in ori:
                         ori["GB"]["__New_Customer__"]["msite"]["modules"][int(e_index) + 1] = pc_GB
                 elif e_plat == 'ios' or e_plat == 'an':
                     ori["__Default_Country__"]["__New_Customer__"]["shopView"][int(e_index) + 1] = pc
