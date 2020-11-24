@@ -77,8 +77,33 @@ class JsonMod():
         assert j
         return j
 
+    def read_jsonpath(self, path, d):
+        """该函数按给定的json路径读取json字符串d的部分内容
+
+       :param path: {str}json路径，例："__Default_Country__/__New_Customer__/pc/modules"
+       :param d: {str}要读取的json字符串
+       :return: {str}/{dict}
+       """
+        path = path.replace('//', '')
+        paths = path.split('/')
+        temp_d = d
+        for p in paths:
+            n = None
+            m = re.search('\[(.*)\]', p)
+
+            if m:
+                n = eval(m.group(1))
+                p = p.replace(m.group(0), '')
+            if n is not None:
+                temp_d = temp_d[p][n]
+            else:
+                temp_d = temp_d[p]
+
+        print(temp_d)
+        return temp_d
+
     def read_jsonpath_from_Wanna(self, path, params):
-        """该函数按给定的json路径读取一个wanna上指定的json文件
+        """该函数按给定的json路径读取一个wanna上指定的json文件的部分内容
 
         :param path: {str}json路径，例："__Default_Country__/__New_Customer__/pc/modules"
         :param params: {dict}访问wanna的参数，例："{'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}"
@@ -104,7 +129,10 @@ class JsonMod():
         return temp_d
 
     def read_jsonpath_from_localfile(self, path, filepath):
+        # if path is None:
         pass
+
+
 
     def write_jsonpath_to_localfile(self, path, value, jsonText, writeFilepath):
         if path is None or value is None:
@@ -152,6 +180,7 @@ class JsonMod():
             self.web_code_lan[self.web] = {}
             global param
             p = param
+            p['webSiteNo']=websiteno
 
             for code in all_plat_code:
                 # p['webSiteNo']=self.wmap[self.web]
@@ -161,6 +190,7 @@ class JsonMod():
                     res = json.loads(requests.get(url=url, params=p).text)
                     if lan == 'en':
                         if res['code'] == 200:
+
                             self.web_code_lan[self.web][code] = []
                             self.web_code_lan[self.web][code].append(lan)
                         else:
@@ -168,4 +198,8 @@ class JsonMod():
                     else:
                         if res['code'] == 200:
                             self.web_code_lan[self.web][code].append(lan)
+                            #
+                            if p['locale'] == 'pt_BR' and p['code'] == 'M1316':
+                                print(res)
+                            #
             # self.log_dict_format(self.web_code_lan[self.web])

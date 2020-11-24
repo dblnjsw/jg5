@@ -6,6 +6,10 @@ import json
 
 if __name__ == '__main__':
     v_lan_map = {}
+    win = tk.Tk()
+    win.title('JsonModGUI v1.0')
+    win.geometry('1360x800')
+    v_way = tk.IntVar()
     v_code_lan_map = {}
     map_code_lan = {}
     names = locals()
@@ -34,19 +38,30 @@ if __name__ == '__main__':
 
 
     def b_read():
-        print('bread')
+        try:
+            print('bread')
+            textarea.delete('1.0', tk.END)
+            writepath = e_filepath.get()
+            p = jsonMod.param.copy()
+            p['webSiteNo'] = e_wbn.get()
+            path = e_path.get()
+            for code in map_code_lan:
+                p['code'] = code
+                for lan in map_code_lan[code]:
+                    p['locale'] = jm.lmap[lan]
+                    wcl = p['webSiteNo'] + '_' + code + '_' + lan + '.txt'
+                    ori = None
+                    if v_way.get() == 1:
+                        ori = jm.get_ori_json(p)
+                    elif v_way.get() == 2:
+                        ori = jm.read_json_file(writepath + '/' + wcl)
 
-        global param
-        p = param.copy()
-        p['webSiteNo'] = e_wbn.get()
-        path = e_path.get()
-        for code in v_code_lan_map:
-            p['code'] = code
-            for lan in v_code_lan_map[code]:
-                p['locale'] = jm.lmap[lan]
-                ori = jm.read_jsonpath_from_Wanna(path, p)
-                textarea.delete('1.0', tk.END)
-                textarea.insert(tk.END, json.dumps(ori, sort_keys=True, indent=4, separators=(', ', ': ')))
+                    ori = jm.read_jsonpath(path, ori)
+                    textarea.insert(tk.END,'*'*20+wcl+'*'*20+'\n')
+                    textarea.insert(tk.END, json.dumps(ori, sort_keys=True, indent=4, separators=(', ', ': '))+'\n')
+        except:
+            tk.messagebox.showerror(title='出错了', message='读取错误')
+            raise Exception
 
 
     def b_write():
@@ -58,45 +73,52 @@ if __name__ == '__main__':
             if not os.path.exists(writepath):
                 os.mkdir(writepath)
 
-            global param
-            p = param.copy()
+            p = jsonMod.param.copy()
             p['webSiteNo'] = e_wbn.get()
             path = e_path.get()
-            for code in list_code:
+            for code in map_code_lan:
                 p['code'] = code
-                for lan in list_lan:
-                    p['locale'] = lan
-                    ori = jm.get_ori_json(p)
+                for lan in map_code_lan[code]:
                     wcl = p['webSiteNo'] + '_' + code + '_' + lan + '.txt'
+                    p['locale'] = jm.lmap[lan]
+                    ori = None
+                    if v_way.get() == 1:
+                        ori = jm.get_ori_json(p)
+                    elif v_way.get() == 2:
+                        ori = jm.read_json_file(writepath + '/' + wcl)
                     jm.write_jsonpath_to_localfile(path, value, ori, writepath + '/' + wcl)
             tk.messagebox.showinfo(title='', message='写入成功')
         except:
             tk.messagebox.showerror(title='出错了', message='写入错误')
+            raise Exception
 
 
     def b_bk():
-        cb_code()
-        writepath = e_filepath.get()
+        try:
+            cb_code()
+            writepath = e_filepath.get()
 
-        if not os.path.exists(writepath):
-            os.mkdir(writepath)
+            if not os.path.exists(writepath):
+                os.mkdir(writepath)
 
-        global map_code_lan
-        p = jsonMod.param.copy()
-        p['webSiteNo'] = e_wbn.get()
-        path = e_path.get()
-        for code in map_code_lan:
-            p['code'] = code
-            for lan in map_code_lan[code]:
-                p['locale'] = jm.lmap[lan]
-                ori = jm.get_ori_json(p)
-                wcl = p['webSiteNo'] + '_' + code + '_' + lan + '.txt'
-                try:
+            global map_code_lan
+            p = jsonMod.param.copy()
+            p['webSiteNo'] = e_wbn.get()
+            path = e_path.get()
+
+            for code in map_code_lan:
+                p['code'] = code
+                for lan in map_code_lan[code]:
+                    p['locale'] = jm.lmap[lan]
+                    ori = jm.get_ori_json(p)
+
+                    wcl = p['webSiteNo'] + '_' + code + '_' + lan + '.txt'
                     jm.write_jsonpath_to_localfile(None, None, ori, writepath + '/' + wcl)
-                    # tk.messagebox.showinfo(title='', message='备份成功')
-                except:
-                    pass
-                    # tk.messagebox.showerror(title='出错了', message='备份错误')
+
+            tk.messagebox.showinfo(title='', message='备份成功')
+        except:
+            tk.messagebox.showerror(title='出错了', message='备份错误')
+            raise Exception
 
 
     def b_hookall():
@@ -114,11 +136,12 @@ if __name__ == '__main__':
                 break
 
 
-    win = tk.Tk()
-    win.title('JsonModGUI v1.0')
-    win.geometry('1360x800')
+
     # textarea
     textarea = tk.Text(win)
+    vscroll = tk.Scrollbar(win, orient=tk.VERTICAL, command=textarea.yview)
+    textarea['yscroll'] = vscroll.set
+    vscroll.pack(side=tk.RIGHT,fill=tk.Y)
     textarea.pack(fill=tk.Y, side=tk.RIGHT)
     # websiteno
     f_wbn = tk.LabelFrame(win, text="websiteno")
@@ -142,6 +165,11 @@ if __name__ == '__main__':
             cb_varname = 'cb_' + code + '_' + lan
             names[cb_varname] = tk.Checkbutton(names[f_varname], text=lan, variable=names[v_varname], onvalue=True,
                                                offvalue=False, command=cb_code)
+    # way
+    f_way = tk.LabelFrame(win, text="way")
+    f_way.pack(fill=tk.X)
+    rb_way1 = tk.Radiobutton(f_way, text="从wanna读取", variable=v_way, value=1)
+    rb_way2 = tk.Radiobutton(f_way, text="从本地读取", variable=v_way, value=2)
 
     # path
     f_path = tk.LabelFrame(win, text="path")
@@ -152,7 +180,7 @@ if __name__ == '__main__':
     b_path = tk.Button(f_path, text="读取", command=b_read)
 
     # write
-    f_write = tk.LabelFrame(win, text="path")
+    f_write = tk.LabelFrame(win, text="write")
     f_write.pack(fill=tk.X)
 
     l_filepath = tk.Label(f_write, text='输出的文件夹路径')
@@ -171,6 +199,9 @@ if __name__ == '__main__':
     for code in jsonMod.all_plat_code:
         for lan in jsonMod.all_lan:
             names['cb_' + code + '_' + lan].pack(side=tk.LEFT)
+
+    rb_way1.pack(side=tk.LEFT)
+    rb_way2.pack(side=tk.LEFT)
 
     e_path.pack(side=tk.LEFT)
     b_path.pack(side=tk.RIGHT)
