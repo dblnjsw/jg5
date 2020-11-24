@@ -135,7 +135,10 @@ if __name__ == '__main__':
                         v_code_lan_map[code][lan].set(True)
                 break
 
-
+    def b_unhook():
+        for code in v_code_lan_map:
+            for lan in v_code_lan_map[code]:
+                v_code_lan_map[code][lan].set(False)
 
     # textarea
     textarea = tk.Text(win)
@@ -149,7 +152,8 @@ if __name__ == '__main__':
     l_wbn = tk.Label(f_wbn, text='网站编号')
     e_wbn = tk.Entry(f_wbn, text='01')
     b_wbn_hook = tk.Button(f_wbn, text="一键勾选", command=b_hookall)
-    b_wbn_bk = tk.Button(f_wbn, text="备份", command=b_bk)
+    b_wbn_bk = tk.Button(f_wbn, text="拉到本地", command=b_bk)
+    b_wbn_unhook=tk.Button(f_wbn,text='全部取消',command=b_unhook)
 
     # code & locale
     for code in jsonMod.all_plat_code:
@@ -195,6 +199,7 @@ if __name__ == '__main__':
     e_wbn.pack(side=tk.LEFT)
     b_wbn_hook.pack(side=tk.RIGHT)
     b_wbn_bk.pack(side=tk.RIGHT)
+    b_wbn_unhook.pack(side=tk.RIGHT)
 
     for code in jsonMod.all_plat_code:
         for lan in jsonMod.all_lan:
