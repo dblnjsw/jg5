@@ -75,7 +75,7 @@ class Gjson():
         # self.json_ori = self.read_json_file('json.txt')
         if not canUpFile:
             print('关闭上传, 图片不会实际上传')
-            self.s3_prefix=self.dgz_prefix
+            # self.s3_prefix=self.dgz_prefix
         else:
             print('上传开启')
 
@@ -227,7 +227,7 @@ class Gjson():
                 return pic_path
             else:
                 if canUpFile:
-                    return None
+                    raise AssertionError('找不到上传文件')
                 else:
                     return pic_path
         else:
@@ -269,7 +269,7 @@ class Gjson():
         :arg
         img {str} -- 图片名,如en-1-p
         :returns
-        str -- 生成的路径，如：chicme/fablistme/20201104/en-1-m1.jpg
+        str -- 生成的路径，如：fablistme/20201104/en-1-m1.jpg
         """
         y = str(datetime.datetime.now().year)
         m = str(datetime.datetime.now().month)
@@ -279,7 +279,7 @@ class Gjson():
         if int(d) < 10:
             d = '0' + str(d)
         datestr = y + m + d
-        path = 'chicme/' + self.web + '/' + datestr + '/' + img
+        path = self.web + '/' + datestr + '/' + img
         return path
 
     def get_en_pic_postfix(self, en_picname):
@@ -504,15 +504,15 @@ class Gjson():
                             # path = self.gen_img_path(picname)
                             path = self.upload_pic(picname + postfixs[0])
 
-                            pc['src'] = self.s3_prefix + path
+                            pc['src'] = self.dgz_prefix + path
                             if pc_GB:
-                                pc_GB['src'] = self.s3_prefix + path
+                                pc_GB['src'] = self.dgz_prefix + path
                     else:
                         picname = picname[:-1] + 'm'
 
                         if "titleImage" in pc:
                             path = self.gen_img_path(picname)
-                            pc['titleImage'] = self.s3_prefix + path + \
+                            pc['titleImage'] = self.dgz_prefix + path + \
                                                postfixs[0]
                 # process type-images
                 elif type == 'images':
@@ -549,11 +549,11 @@ class Gjson():
                         picname_num = picname + str(x + 1)
                         if 'src' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
-                            pc['images'][x]['src'] = self.s3_prefix + path
+                            pc['images'][x]['src'] = self.dgz_prefix + path
                         if 'imageUrl' in pc['images'][x]:
                             path = self.upload_pic(picname_num + postfixs[x])
                             pc['images'][x][
-                                'imageUrl'] = self.s3_prefix + path
+                                'imageUrl'] = self.dgz_prefix + path
 
                 after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)
