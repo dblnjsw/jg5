@@ -269,7 +269,7 @@ class Gjson():
         :arg
         img {str} -- 图片名,如en-1-p
         :returns
-        str -- 生成的路径，如：zwb/fablistme/20201104/en-1-m1.jpg
+        str -- 生成的路径，如：chicme/fablistme/20201104/en-1-m1.jpg
         """
         y = str(datetime.datetime.now().year)
         m = str(datetime.datetime.now().month)
@@ -279,7 +279,7 @@ class Gjson():
         if int(d) < 10:
             d = '0' + str(d)
         datestr = y + m + d
-        path = 'zwb/' + self.web + '/' + datestr + '/' + img
+        path = 'chicme/' + self.web + '/' + datestr + '/' + img
         return path
 
     def get_en_pic_postfix(self, en_picname):
