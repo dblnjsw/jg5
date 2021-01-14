@@ -34,7 +34,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = False   #如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
+canUpFile = True   #如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
 autoBk = True
 
 
@@ -168,8 +168,7 @@ class Gjson():
                     e_language = ma.group(1)
                     # if lanlist.__contains__(e_language):
                     lanlist.remove(e_language)
-                    if table.cell_value(row, col) != '':
-                        ldic[e_language] = value
+                    ldic[e_language] = value
                 else:
 
                     if isinstance(value, float):
