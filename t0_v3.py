@@ -163,8 +163,6 @@ class Gjson():
                 if title_value.count('语') > 0:
                     ma = re.search('（(.*)）', title_value)
                     assert ma, '表头语言错误'
-                    if value == '':
-                        continue
                     e_language = ma.group(1)
                     # if lanlist.__contains__(e_language):
                     lanlist.remove(e_language)
@@ -205,34 +203,36 @@ class Gjson():
             js = json.dumps(s)
             f.write(js)
 
-    def upload_pic(self, picname_postfix):
+    def is_pic_exist(self,picname_postfix):
+        lan = picname_postfix[0:2]
+
+        if not os.path.exists(self.current_dir + '/' + picname_postfix):
+            print('未找到图片：' + self.current_dir + '/' + picname_postfix)
+            # 冷门语言改动追随英语
+            if lan in unpo_locale:
+                picname_postfix = picname_postfix.replace(lan, 'en')
+                if not os.path.exists(self.current_dir + '/' + picname_postfix):
+                    return None
+                pic_path = self.gen_img_path(picname_postfix)
+                print('返回en图片链接：' + pic_path)
+                return pic_path
+            else:
+                return None     # None意味没有图片可上传，src的字符串也无需修改
+
+
+    def upload_pic(self, picname_postfix, pic_path):
         """上传图片到亚马逊s3服务器
         :arg
         picname_postfix {str} -- 带后缀的图片名，如：en-1-p.jpg
         """
         print()
         print("开始上传图片：" + picname_postfix)
-
-        pic_path = self.gen_img_path(picname_postfix)
-
-        lan = picname_postfix[0:2]
-
-        if not os.path.exists(self.current_dir + '/' + picname_postfix):
-            print('未找到图片：' + self.current_dir + '/' + picname_postfix)
-            if lan in unpo_locale:
-                picname_postfix = picname_postfix.replace(lan, 'en')
-                pic_path = self.gen_img_path(picname_postfix)
-                print('返回en图片链接：' + pic_path)
-                return pic_path
-            else:
-                if canUpFile:
-                    raise AssertionError('找不到上传文件')
-                else:
-                    return pic_path
+        if canUpFile:
+            upload_file(self.current_dir + '/' + picname_postfix, 'image.chic-fusion.com', pic_path)
+            print('上传成功：https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + pic_path)
         else:
-            if canUpFile:
-                upload_file(self.current_dir + '/' + picname_postfix, 'image.chic-fusion.com', pic_path)
-        print('上传成功：https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + pic_path)
+            print('假装上传成功：https://s3-us-west-2.amazonaws.com/image.chic-fusion.com/' + pic_path)
+
         return pic_path
 
     def is_imgs(self, i, n):
@@ -408,11 +408,11 @@ class Gjson():
             e_hrefs = []
             if type == 'images':
                 if len(postfixs) != n_images + 1:
-                    if canUpFile:
-                        raise AssertionError('找不到图片')
-                    else:
-                        for k in range(n_images + 1):
-                            postfixs.append('.jpg')
+                    # if canUpFile:
+                    #     raise AssertionError('找不到图片')
+                    # else:
+                    #     for k in range(n_images + 1):
+                    postfixs.append('.jpg')
                 for ii in range(n_images + 1):
                     if ii > 0:
                         print(self.configs[i + ii])
@@ -501,18 +501,21 @@ class Gjson():
                     if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
                         if 'src' in pc:
                             # path = self.gen_img_path(picname)
-                            path = self.upload_pic(picname + postfixs[0])
-
-                            pc['src'] = self.dgz_prefix + path
-                            if pc_GB:
-                                pc_GB['src'] = self.dgz_prefix + path
+                            path = self.is_pic_exist(picname + postfixs[0])
+                            # path为None不用上传
+                            if path:
+                                self.upload_pic(picname + postfixs[0], path)
+                                pc['src'] = self.dgz_prefix + path
+                                if pc_GB:
+                                    pc_GB['src'] = self.dgz_prefix + path
                     else:
                         picname = picname[:-1] + 'm'
-
-                        if "titleImage" in pc:
-                            path = self.gen_img_path(picname)
-                            pc['titleImage'] = self.dgz_prefix + path + \
-                                               postfixs[0]
+                        path = self.is_pic_exist(picname + postfixs[0])
+                        if path:
+                            if "titleImage" in pc:
+                                path = self.gen_img_path(picname)
+                                pc['titleImage'] = self.dgz_prefix + path + \
+                                                   postfixs[0]
                 # process type-images
                 elif type == 'images':
                     for x in range(len(e_titles)):
@@ -546,13 +549,14 @@ class Gjson():
                         else:
                             picname = picname[:-1] + 'm'
                         picname_num = picname + str(x + 1)
-                        if 'src' in pc['images'][x]:
-                            path = self.upload_pic(picname_num + postfixs[x])
-                            pc['images'][x]['src'] = self.dgz_prefix + path
-                        if 'imageUrl' in pc['images'][x]:
-                            path = self.upload_pic(picname_num + postfixs[x])
-                            pc['images'][x][
-                                'imageUrl'] = self.dgz_prefix + path
+                        path = self.is_pic_exist(picname_num + postfixs[x])
+                        if path:
+                            self.upload_pic(picname_num + postfixs[x], path)
+                            if 'src' in pc['images'][x]:
+                                pc['images'][x]['src'] = self.dgz_prefix + path
+                            if 'imageUrl' in pc['images'][x]:
+                                pc['images'][x][
+                                    'imageUrl'] = self.dgz_prefix + path
 
                 after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)
