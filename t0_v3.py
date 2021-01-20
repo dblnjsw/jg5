@@ -21,8 +21,6 @@ all_lan = ['en', 'fr', 'de', 'es', 'pt', 'sv', 'da', 'nb', 'is', 'fi']
 
 all_plat_code = ['M1236', 'M1284', 'M1243', 'M1316']
 
-
-
 # with open('json.txt','r',encoding='UTF-8') as f:
 #     s=f.read()
 # j=json.loads(s)
@@ -34,7 +32,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = True   #如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
+canUpFile = True  # 如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
 autoBk = True
 
 
@@ -203,7 +201,7 @@ class Gjson():
             js = json.dumps(s)
             f.write(js)
 
-    def is_pic_exist(self,picname_postfix):
+    def is_pic_exist(self, picname_postfix):
         lan = picname_postfix[0:2]
 
         if not os.path.exists(self.current_dir + '/' + picname_postfix):
@@ -217,15 +215,16 @@ class Gjson():
                 print('返回en图片链接：' + pic_path)
                 return pic_path
             else:
-                return None     # None意味没有图片可上传，src的字符串也无需修改
-
+                return None  # None意味没有图片可上传，src的字符串也无需修改
+        else:
+            pic_path = self.gen_img_path(picname_postfix)
+            return pic_path
 
     def upload_pic(self, picname_postfix, pic_path):
         """上传图片到亚马逊s3服务器
         :arg
         picname_postfix {str} -- 带后缀的图片名，如：en-1-p.jpg
         """
-        print()
         print("开始上传图片：" + picname_postfix)
         if canUpFile:
             upload_file(self.current_dir + '/' + picname_postfix, 'image.chic-fusion.com', pic_path)
@@ -281,7 +280,7 @@ class Gjson():
         path = self.web + '/' + datestr + '/' + img
         return path
 
-    def get_en_pic_postfix(self, en_picname):
+    def get_en_pic_postfix(self, en_picname, image_num):
         """获得en开头图片的后缀，如：en-1-p.jpg的后缀为.jpg
         :arg
         en_picname {str} -- en开头的图片名
@@ -289,19 +288,20 @@ class Gjson():
         str or list -- 后缀名，如果双图板块，en图片有两张，则返回存有两个str的list,如:['.jpg','.gif']
         """
         allpic = os.scandir(self.current_dir)
-        postfixs = []
+        postfixs = ['' for i in range(image_num)]
+        list = []
         for e in allpic:
             if e.name.startswith(en_picname):
                 postfix = e.name.replace(en_picname, '')
-                postfixs.append(postfix)
-        if len(postfixs) > 1:
-            for i in range(len(postfixs)):
-                postfixs[i] = postfixs[i][1:]
-        if len(postfixs) < 1:
-            if canUpFile:
-                raise AssertionError('找不到图片')
-            else:
-                postfixs.append('.jpg')
+                list.append(postfix)
+        if image_num > 1:
+            for e in list:
+                num = int(e[-5])
+                postfixs[num - 1] = e[1:]
+
+        else:
+            postfixs[0] = list[0]
+
         return postfixs
 
     def log_dict_format(self, dict):
@@ -394,8 +394,6 @@ class Gjson():
             except:
                 raise AssertionError('config.xlxs标题非法')
 
-            postfixs = self.get_en_pic_postfix('en-' + str(e_index) + '-' + e_plat[:1])
-
             # is images?
             type = 'list'
             n_images = self.is_imgs(i, 0)
@@ -403,16 +401,18 @@ class Gjson():
             if n_images != 0:
                 type = 'images'
 
+            postfixs = self.get_en_pic_postfix('en-' + str(e_index) + '-' + e_plat[:1], n_images + 1)
+
             # is image, need titles and hrefs
             e_titles = []
             e_hrefs = []
             if type == 'images':
                 if len(postfixs) != n_images + 1:
                     # if canUpFile:
-                    #     raise AssertionError('找不到图片')
+                    raise AssertionError('找不到图片')
                     # else:
-                    #     for k in range(n_images + 1):
-                    postfixs.append('.jpg')
+                    # for k in range(n_images + 1):
+                    #     postfixs.append('.jpg')
                 for ii in range(n_images + 1):
                     if ii > 0:
                         print(self.configs[i + ii])
