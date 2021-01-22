@@ -556,6 +556,9 @@ class Gjson():
                                 path = self.gen_img_path(picname)
                                 pc['titleImage'] = self.dgz_prefix + path + \
                                                    postfixs[0]
+                                pc_old['titleImage'] = self.dgz_prefix + path + \
+                                                       postfixs[0]
+
                 # process type-images
                 elif type == 'images':
                     for x in range(len(e_titles)):
