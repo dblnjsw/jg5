@@ -273,7 +273,7 @@ class Gjson():
         m = str(datetime.datetime.now().month)
         d = str(datetime.datetime.now().day)
         h = str(datetime.datetime.now().hour)
-        m = str(datetime.datetime.now().minute)
+        minute = str(datetime.datetime.now().minute)
 
         if int(m) < 10:
             m = '0' + str(m)
@@ -281,9 +281,9 @@ class Gjson():
             d = '0' + str(d)
         if int(h) < 10:
             h = '0' + str(h)
-        if int(m) < 10:
-            m = '0' + str(m)
-        datestr = y + m + d + h + m
+        if int(minute) < 10:
+            minute = '0' + str(minute)
+        datestr = y + m + d + h + minute
         path = self.web + '/' + datestr + '/' + img
         return path
 
