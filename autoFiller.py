@@ -272,11 +272,18 @@ class Gjson():
         y = str(datetime.datetime.now().year)
         m = str(datetime.datetime.now().month)
         d = str(datetime.datetime.now().day)
+        h = str(datetime.datetime.now().hour)
+        m = str(datetime.datetime.now().minute)
+
         if int(m) < 10:
             m = '0' + str(m)
         if int(d) < 10:
             d = '0' + str(d)
-        datestr = y + m + d
+        if int(h) < 10:
+            h = '0' + str(h)
+        if int(m) < 10:
+            m = '0' + str(m)
+        datestr = y + m + d + h + m
         path = self.web + '/' + datestr + '/' + img
         return path
 
@@ -443,8 +450,8 @@ class Gjson():
                 pc = None
                 pc_old = None
                 pc_GB = None
-                pc_FR=None
-                pc_DE=None
+                pc_FR = None
+                pc_DE = None
                 if e_plat == 'pc' or e_plat == 'pc1316':
                     pc = ori["__Default_Country__"]["__New_Customer__"]["pc"]["modules"][int(e_index) + 1]
                     if lan == 'en' and 'GB' in ori:

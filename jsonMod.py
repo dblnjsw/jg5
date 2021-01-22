@@ -87,6 +87,8 @@ class JsonMod():
         path = path.replace('//', '')
         paths = path.split('/')
         temp_d = d
+        if path == '':
+            return temp_d
         for p in paths:
             n = None
             m = re.search('\[(.*)\]', p)
