@@ -83,6 +83,23 @@ class Gjson():
             print('自动备份关闭')
         os.environ["AWS_SHARED_CREDENTIALS_FILE"] = 'C:\\credentials.txt'
 
+        #datestr
+        y = str(datetime.datetime.now().year)
+        m = str(datetime.datetime.now().month)
+        d = str(datetime.datetime.now().day)
+        h = str(datetime.datetime.now().hour)
+        minute = str(datetime.datetime.now().minute)
+
+        if int(m) < 10:
+            m = '0' + str(m)
+        if int(d) < 10:
+            d = '0' + str(d)
+        if int(h) < 10:
+            h = '0' + str(h)
+        if int(minute) < 10:
+            minute = '0' + str(minute)
+        self.datestr = y + m + d + h + minute
+
         # find all dir
         alldir = os.scandir()
         for e in alldir:
@@ -269,22 +286,8 @@ class Gjson():
         :returns
         str -- 生成的路径，如：fablistme/20201104/en-1-m1.jpg
         """
-        y = str(datetime.datetime.now().year)
-        m = str(datetime.datetime.now().month)
-        d = str(datetime.datetime.now().day)
-        h = str(datetime.datetime.now().hour)
-        minute = str(datetime.datetime.now().minute)
 
-        if int(m) < 10:
-            m = '0' + str(m)
-        if int(d) < 10:
-            d = '0' + str(d)
-        if int(h) < 10:
-            h = '0' + str(h)
-        if int(minute) < 10:
-            minute = '0' + str(minute)
-        datestr = y + m + d + h + minute
-        path = self.web + '/' + datestr + '/' + img
+        path = self.web + '/' + self.datestr + '/' + img
         return path
 
     def get_en_pic_postfix(self, en_picname, image_num):
