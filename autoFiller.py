@@ -297,6 +297,8 @@ class Gjson():
         allpic = os.scandir(self.current_dir)
         postfixs = ['' for i in range(image_num)]
         list = []
+        if en_picname[-1] == 'a' or en_picname[-1] == 'i':
+            en_picname = en_picname[:-1] + 'm'
         for e in allpic:
             if e.name.startswith(en_picname):
                 postfix = e.name.replace(en_picname, '')
