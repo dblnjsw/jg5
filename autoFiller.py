@@ -32,7 +32,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = True  # 如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
+canUpFile = False  # 如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
 autoBk = True
 
 
@@ -83,7 +83,7 @@ class Gjson():
             print('自动备份关闭')
         os.environ["AWS_SHARED_CREDENTIALS_FILE"] = 'C:\\credentials.txt'
 
-        #datestr
+        # datestr
         y = str(datetime.datetime.now().year)
         m = str(datetime.datetime.now().month)
         d = str(datetime.datetime.now().day)
@@ -144,7 +144,9 @@ class Gjson():
         else:
             res = requests.get(url=url, params=p)
             j = json.loads(res.text)
-            assert j['code'] == 200, '不存在该语言或平台：' + str(p)
+            if j['code'] != 200:
+                print('不存在该语言或平台：' + str(p))
+                return None
             j = json.loads(j['result'])
         assert j
         return j
@@ -452,6 +454,12 @@ class Gjson():
                 param['code'] = code_map[e_plat]
 
                 ori = self.get_ori_json(param)
+                if ori is None:
+                    continue
+                p = self.is_pic_exist(picname + postfixs[0])
+                # 既没图片，标题还为空，跳过
+                if e_title == '' and p is None:
+                    continue
                 pc = None
                 pc_old = None
                 pc_GB = None
