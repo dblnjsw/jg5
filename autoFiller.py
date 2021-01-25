@@ -179,8 +179,8 @@ class Gjson():
                     ma = re.search('（(.*)）', title_value)
                     assert ma, '表头语言错误'
                     e_language = ma.group(1)
-                    # if lanlist.__contains__(e_language):
-                    lanlist.remove(e_language)
+                    if lanlist.__contains__(e_language):
+                        lanlist.remove(e_language)
                     ldic[e_language] = value
                 else:
 
