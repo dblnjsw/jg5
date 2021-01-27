@@ -10,6 +10,7 @@ if __name__ == '__main__':
     win.title('JsonModGUI v1.0')
     win.geometry('1360x800')
     v_way = tk.IntVar()
+    v_way_input = tk.IntVar()
     v_code_lan_map = {}
     map_code_lan = {}
     names = locals()
@@ -45,20 +46,33 @@ if __name__ == '__main__':
             p = jsonMod.param.copy()
             p['webSiteNo'] = e_wbn.get()
             path = e_path.get()
-            for code in map_code_lan:
-                p['code'] = code
-                for lan in map_code_lan[code]:
-                    p['locale'] = jm.lmap[lan]
-                    wcl = p['webSiteNo'] + '_' + code + '_' + lan + '.txt'
-                    ori = None
-                    if v_way.get() == 1:
-                        ori = jm.get_ori_json(p)
-                    elif v_way.get() == 2:
-                        ori = jm.read_json_file(writepath + '/' + wcl)
+            if v_way_input.get() == 1:
 
-                    ori = jm.read_jsonpath(path, ori)
-                    textarea.insert(tk.END, '*' * 20 + wcl + '*' * 20 + '\n')
-                    textarea.insert(tk.END, json.dumps(ori, sort_keys=True, indent=4, separators=(', ', ': ')) + '\n')
+                p['code'] = e_way_input_code.get()
+                p['locale'] = jm.lmap[e_way_input_lan.get()]
+                wcl = p['webSiteNo'] + '_' + p['code'] + '_' + p['locale'] + '.txt'
+                ori = None
+                if v_way.get() == 1:
+                    ori = jm.get_ori_json(p)
+                elif v_way.get() == 2:
+                    ori = jm.read_json_file(writepath + '/' + wcl)
+
+
+            else:
+                for code in map_code_lan:
+                    p['code'] = code
+                    for lan in map_code_lan[code]:
+                        p['locale'] = jm.lmap[lan]
+                        wcl = p['webSiteNo'] + '_' + code + '_' + lan + '.txt'
+                        ori = None
+                        if v_way.get() == 1:
+                            ori = jm.get_ori_json(p)
+                        elif v_way.get() == 2:
+                            ori = jm.read_json_file(writepath + '/' + wcl)
+
+            ori = jm.read_jsonpath(path, ori)
+            textarea.insert(tk.END, '*' * 20 + wcl + '*' * 20 + '\n')
+            textarea.insert(tk.END, json.dumps(ori, sort_keys=True, indent=4, separators=(', ', ': ')) + '\n')
         except:
             tk.messagebox.showerror(title='出错了', message='读取错误')
             raise Exception
@@ -157,6 +171,19 @@ if __name__ == '__main__':
     b_wbn_bk = tk.Button(f_wbn, text="拉到本地", command=b_bk)
     b_wbn_unhook = tk.Button(f_wbn, text='全部取消', command=b_unhook)
 
+    # code & locale input
+    f_way_input = tk.LabelFrame(win, text="input way")
+    f_way_input.pack(fill=tk.X)
+    rb_way_input1 = tk.Radiobutton(f_way_input, text="输入方式", variable=v_way_input, value=1)
+    rb_way_input2 = tk.Radiobutton(f_way_input, text="勾选方式", variable=v_way_input, value=2)
+
+    l_way_input_code = tk.Label(f_way_input, text='消息编码')
+    e_way_input_code = tk.Entry(f_way_input, text='M1197')
+    l_way_input_lan = tk.Label(f_way_input, text='语言')
+    e_way_input_lan = tk.Entry(f_way_input, text='en')
+
+    v_way_input.set(1)
+
     # code & locale
     for code in jsonMod.all_plat_code:
         v_code_lan_map[code] = {}
@@ -176,6 +203,8 @@ if __name__ == '__main__':
     f_way.pack(fill=tk.X)
     rb_way1 = tk.Radiobutton(f_way, text="从wanna读取", variable=v_way, value=1)
     rb_way2 = tk.Radiobutton(f_way, text="从本地读取", variable=v_way, value=2)
+
+    v_way.set(1)
 
     # path
     f_path = tk.LabelFrame(win, text="path")
@@ -218,6 +247,13 @@ if __name__ == '__main__':
     b_write.pack(side=tk.RIGHT)
     e_value.pack(side=tk.RIGHT)
     l_value.pack(side=tk.RIGHT)
+
+    rb_way_input1.pack(side=tk.LEFT)
+    rb_way_input2.pack(side=tk.LEFT)
+    l_way_input_code.pack(side=tk.LEFT)
+    e_way_input_code.pack(side=tk.LEFT)
+    l_way_input_lan.pack(side=tk.LEFT)
+    e_way_input_lan.pack(side=tk.LEFT)
 
     win.mainloop()
     jm.end()
