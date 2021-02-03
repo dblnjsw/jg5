@@ -446,6 +446,8 @@ class Gjson():
                 e_language = lan
                 e_title = e['title'][lan]
                 picname = e_language + '-' + str(int(e_index)) + '-' + e_plat[:1]
+                if e_plat == 'ios' or e_plat == 'an':
+                    picname = picname[:-1] + 'm'
 
                 # read origin json file
                 global param
@@ -591,19 +593,26 @@ class Gjson():
                             self.upload_pic(picname_num + postfixs[x], path)
                             if 'src' in pc['images'][x]:
                                 pc['images'][x]['src'] = self.dgz_prefix + path
+                                if pc_old:
+                                    pc_old['images'][x]['src'] = self.dgz_prefix + path
                             if 'imageUrl' in pc['images'][x]:
                                 pc['images'][x][
                                     'imageUrl'] = self.dgz_prefix + path
+                                if pc_old:
+                                    pc_old['images'][x][
+                                        'imageUrl'] = self.dgz_prefix + path
 
                         if e_titles[x] != '':
                             if 'title' in pc['images'][x]:
                                 pc['images'][x]['title'] = e_titles[x][lan]
-                            if pc_GB:
-                                pc_GB['images'][x]['title'] = e_titles[x][lan]
-                            if pc_FR:
-                                pc_FR['images'][x]['title'] = e_titles[x][lan]
-                            if pc_DE:
-                                pc_DE['images'][x]['title'] = e_titles[x][lan]
+                                if pc_old:
+                                    pc_old['images'][x]['title'] = e_titles[x][lan]
+                                if pc_GB:
+                                    pc_GB['images'][x]['title'] = e_titles[x][lan]
+                                if pc_FR:
+                                    pc_FR['images'][x]['title'] = e_titles[x][lan]
+                                if pc_DE:
+                                    pc_DE['images'][x]['title'] = e_titles[x][lan]
 
                         if e_hrefs[x] != '':
                             m = re.search('.*\/(.*?)\.html', e_hrefs[x])
@@ -617,23 +626,25 @@ class Gjson():
                                 pc['images'][x]['deepLink']['params'][1] = e_titles[x][lan]
                             if 'href' in pc['images'][x]:
                                 pc['images'][x]['href'] = e_hrefs[x]
-                            if pc_GB:
-                                pc_GB['images'][x]['href'] = e_hrefs[x]
-                            if pc_FR:
-                                pc_FR['images'][x]['href'] = e_hrefs[x]
-                            if pc_DE:
-                                pc_DE['images'][x]['href'] = e_hrefs[x]
+                                if pc_old:
+                                    pc_old['images'][x]['href'] = e_hrefs[x]
+                                if pc_GB:
+                                    pc_GB['images'][x]['href'] = e_hrefs[x]
+                                if pc_FR:
+                                    pc_FR['images'][x]['href'] = e_hrefs[x]
+                                if pc_DE:
+                                    pc_DE['images'][x]['href'] = e_hrefs[x]
 
                         if 'refId' in pc['images'][x]:
                             pc['images'][x]['refId'] = e_titles[x]['en']
+                            if pc_old:
+                                pc_old['images'][x]['refId'] = e_titles[x]['en']
                             if pc_GB:
                                 pc_GB['images'][x]['refId'] = e_titles[x]['en']
                             if pc_FR:
                                 pc_FR['images'][x]['refId'] = e_titles[x]['en']
                             if pc_DE:
                                 pc_DE['images'][x]['refId'] = e_titles[x]['en']
-
-
 
                 after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)

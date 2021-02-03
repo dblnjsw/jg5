@@ -21,6 +21,26 @@ def pipei(word):
     return None
 
 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        pass
+
+    try:
+        import unicodedata
+        unicodedata.numeric(s)
+        return True
+    except (TypeError, ValueError):
+        pass
+
+    return False
+#判断关键字是否合法
+def is_value(value):
+    if is_number(value):
+        return False
+    return True
 def get_db():
     # 连接池中获取结果
     connect = pool.connection()
@@ -124,7 +144,7 @@ if __name__ == '__main__':
     '''
         读db原有数据进入内存value_list
     '''
-    print('开始读取数据库...')
+    print('1.开始读取数据库...')
     timer_read_db = time.time()
     result = get_db()
     for e in result:
@@ -132,7 +152,11 @@ if __name__ == '__main__':
     cost_list['read db'] = time.time() - timer_read_db
     db_nums = len(value_list)
     print('数据库内已有数据：' + str(db_nums) + '条')
-    # 读取wzgjc.xlxs数据进入内存value_list（去重）
+
+    '''
+        读取wzgjc.xlxs数据进入内存value_list（去重）
+    '''
+    print('2.开始读取excel...')
     timer1 = time.process_time()
     timer11 = time.time()
 
@@ -149,7 +173,8 @@ if __name__ == '__main__':
         cols = table.ncols
         for row in range(0, rows):
             value = str(table.cell_value(row, 0))
-
+            if not is_value(value):
+                continue
             keym = pipei(value)
             if keym:
                 keym = pymysql.escape_string(keym)
@@ -161,7 +186,7 @@ if __name__ == '__main__':
 
             i += 1
     print('wzgjc.xlxs数据：' + str(i - 2) + '条')
-    print('开始插入数据库...')
+    print('3.开始插入数据库...')
     # if i > 100000:
     #     break
 
