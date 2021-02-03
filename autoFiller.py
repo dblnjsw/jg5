@@ -32,7 +32,7 @@ url = 'http://54.222.221.139:8088/wanna-console/wanna/message/anon/get'
 param = {'webSiteNo': '01', 'code': 'M1236', 'locale': 'en_US'}
 
 # configuration
-canUpFile = False  # 如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
+canUpFile = True  # 如关闭上传，服务器前缀为https://dgzfssf1la12s.cloudfront.net
 autoBk = True
 
 
@@ -458,8 +458,10 @@ class Gjson():
                     continue
                 p = self.is_pic_exist(picname + postfixs[0])
                 # 既没图片，标题还为空，跳过
-                if e_title == '' and p is None:
-                    continue
+                if type == 'list':
+                    if e_title == '' and p is None:
+                        continue
+
                 pc = None
                 pc_old = None
                 pc_GB = None
@@ -574,6 +576,25 @@ class Gjson():
                 elif type == 'images':
                     for x in range(len(e_titles)):
 
+                        if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
+                            pass
+                        else:
+                            picname = picname[:-1] + 'm'
+                        picname_num = picname + str(x + 1)
+                        path = self.is_pic_exist(picname_num + postfixs[x])
+                        # 既没图片，标题还为空，跳过
+                        if e_titles[x] == '' and path is None:
+                            continue
+
+                        # process src
+                        if path:
+                            self.upload_pic(picname_num + postfixs[x], path)
+                            if 'src' in pc['images'][x]:
+                                pc['images'][x]['src'] = self.dgz_prefix + path
+                            if 'imageUrl' in pc['images'][x]:
+                                pc['images'][x][
+                                    'imageUrl'] = self.dgz_prefix + path
+
                         if e_titles[x] != '':
                             if 'title' in pc['images'][x]:
                                 pc['images'][x]['title'] = e_titles[x][lan]
@@ -609,20 +630,7 @@ class Gjson():
                             if pc_DE:
                                 pc_DE['images'][x]['refId'] = e_titles[x]['en']
 
-                        # process src
-                        if e_plat == 'pc' or e_plat == 'ms' or e_plat == 'pc1316' or e_plat == 'ms1316':
-                            pass
-                        else:
-                            picname = picname[:-1] + 'm'
-                        picname_num = picname + str(x + 1)
-                        path = self.is_pic_exist(picname_num + postfixs[x])
-                        if path:
-                            self.upload_pic(picname_num + postfixs[x], path)
-                            if 'src' in pc['images'][x]:
-                                pc['images'][x]['src'] = self.dgz_prefix + path
-                            if 'imageUrl' in pc['images'][x]:
-                                pc['images'][x][
-                                    'imageUrl'] = self.dgz_prefix + path
+
 
                 after.append(copy.deepcopy(pc))
                 after_lan.append(e_language)
