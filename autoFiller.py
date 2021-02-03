@@ -606,11 +606,14 @@ class Gjson():
                                 pc_DE['images'][x]['title'] = e_titles[x][lan]
 
                         if e_hrefs[x] != '':
-                            m = re.search('.*\/(.*?)\.html', e_href)
+                            m = re.search('.*\/(.*?)\.html', e_hrefs[x])
+                            id_images = None
                             if m:
-                                id = m.group(1)
+                                id_images = m.group(1)
+                            else:
+                                raise AssertionError('链接格式有误')
                             if 'deepLink' in pc['images'][x]:
-                                pc['images'][x]['deepLink']['params'][0] = id
+                                pc['images'][x]['deepLink']['params'][0] = id_images
                                 pc['images'][x]['deepLink']['params'][1] = e_titles[x][lan]
                             if 'href' in pc['images'][x]:
                                 pc['images'][x]['href'] = e_hrefs[x]
