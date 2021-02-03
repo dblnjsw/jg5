@@ -583,7 +583,7 @@ class Gjson():
                         picname_num = picname + str(x + 1)
                         path = self.is_pic_exist(picname_num + postfixs[x])
                         # 既没图片，标题还为空，跳过
-                        if e_titles[x] == '' and path is None:
+                        if e_titles[x][lan] == '' and path is None:
                             continue
 
                         # process src
